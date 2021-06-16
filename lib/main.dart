@@ -1,11 +1,20 @@
 import 'package:disc_golf/screens/hole_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final _initialization = Firebase.initializeApp();
+
   @override
   Widget build(BuildContext context) {
     final myTheme = ThemeData(
@@ -19,16 +28,29 @@ class MyApp extends StatelessWidget {
       scaffoldBackgroundColor: Colors.orange.shade50,
     );
 
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
-      theme: myTheme,
-      darkTheme: myTheme.copyWith(
-        brightness: Brightness.dark,
-        primaryColor: null,
-        scaffoldBackgroundColor: null,
-      ),
-      home: HomePage(),
+    return FutureBuilder(
+      future: _initialization,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Text('Error :(');
+        }
+
+        if (snapshot.connectionState == ConnectionState.done) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'Flutter Demo',
+            theme: myTheme,
+            darkTheme: myTheme.copyWith(
+              brightness: Brightness.dark,
+              primaryColor: null,
+              scaffoldBackgroundColor: null,
+            ),
+            home: HomePage(),
+          );
+        }
+
+        return CircularProgressIndicator();
+      },
     );
   }
 }
