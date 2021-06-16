@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.counter">
+    package="com.example.disc_golf">
    <application
-        android:label="counter"
+        android:label="Disc Golf"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

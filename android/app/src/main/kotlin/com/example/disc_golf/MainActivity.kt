@@ -1,4 +1,4 @@
-package com.example.counter
+package com.example.disc_golf
 
 import io.flutter.embedding.android.FlutterActivity
 

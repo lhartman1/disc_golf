@@ -1,6 +1,6 @@
 {
-    "name": "counter",
-    "short_name": "counter",
+    "name": "disc_golf",
+    "short_name": "disc_golf",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

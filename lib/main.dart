@@ -1,4 +1,4 @@
-import 'package:counter/screens/hole_screen.dart';
+import 'package:disc_golf/screens/hole_screen.dart';
 import 'package:flutter/material.dart';
 
 void main() {
