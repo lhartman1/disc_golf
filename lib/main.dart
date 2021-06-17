@@ -1,6 +1,9 @@
-import 'package:disc_golf/screens/hole_screen.dart';
-import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
+
+import './screens/auth_screen.dart';
+import './screens/hole_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +20,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    final myTheme = ThemeData(
+    final lightTheme = ThemeData(
       // primarySwatch: Colors.lightBlue,
       // primaryColor: Colors.lightBlue[200],
       // accentColor: Colors.amberAccent,
@@ -26,6 +29,12 @@ class _MyAppState extends State<MyApp> {
       primaryColor: Color(0xffff7000),
       accentColor: Colors.amberAccent,
       scaffoldBackgroundColor: Colors.orange.shade50,
+    );
+
+    final darkTheme = ThemeData(
+      brightness: Brightness.dark,
+      primarySwatch: Colors.orange,
+      accentColor: Colors.amberAccent,
     );
 
     return FutureBuilder(
@@ -39,13 +48,16 @@ class _MyAppState extends State<MyApp> {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
             title: 'Flutter Demo',
-            theme: myTheme,
-            darkTheme: myTheme.copyWith(
-              brightness: Brightness.dark,
-              primaryColor: null,
-              scaffoldBackgroundColor: null,
-            ),
-            home: HomePage(),
+            theme: lightTheme,
+            darkTheme: darkTheme,
+            home: StreamBuilder(
+                stream: FirebaseAuth.instance.authStateChanges(),
+                builder: (context, userSnapshot) {
+                  if (userSnapshot.hasData) {
+                    return HomePage();
+                  }
+                  return AuthScreen();
+                }),
           );
         }
 
@@ -63,6 +75,24 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Home Page'),
+        actions: [
+          PopupMenuButton(
+            onSelected: (value) {
+              FirebaseAuth.instance.signOut();
+            },
+            itemBuilder: (context) {
+              return [
+                PopupMenuItem(
+                  value: 'logout',
+                  child: ListTile(
+                    leading: Icon(Icons.exit_to_app),
+                    title: Text('Logout'),
+                  ),
+                ),
+              ];
+            },
+          ),
+        ],
       ),
       body: Center(
         child: ElevatedButton(
