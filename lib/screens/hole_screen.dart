@@ -1,98 +1,36 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-class HoleScreen extends StatelessWidget {
-  final String title;
+import '../db/firebase_helper.dart';
+import '../models/match.dart';
+import '../models/user_strokes.dart';
+import '../widgets/hole/player_hole_score.dart';
 
-  const HoleScreen({Key? key, required this.title}) : super(key: key);
+class HoleScreen extends StatelessWidget {
+  final Match match;
+
+  const HoleScreen({Key? key, required this.match}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final controller = PageController(initialPage: 0);
+    // Use this to get rid of last hole snackbar message
+    controller.addListener(() {
+      ScaffoldMessenger.of(context).clearSnackBars();
+    });
+
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            pinned: true,
-            floating: true,
-            title: Text(
-              title,
-            ),
-            actions: [
-              IconButton(
-                onPressed: () {},
-                icon: Icon(Icons.person_add_alt),
-              ),
-              IconButton(
-                onPressed: () {},
-                icon: Icon(Icons.qr_code),
-              ),
-            ],
-            bottom: PreferredSize(
-                child: Container(
-                  height: kToolbarHeight,
-                  alignment: Alignment.center,
-                  padding: EdgeInsets.symmetric(
-                      horizontal: AppBarTheme.of(context).titleSpacing ??
-                          NavigationToolbar.kMiddleSpacing),
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          Text('HOLE '),
-                          Text(
-                            '2',
-                            style: Theme.of(context).textTheme.headline4,
-                          ),
-                        ],
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          ScaffoldMessenger.of(context)
-                            ..clearSnackBars()
-                            ..showSnackBar(SnackBar(
-                                content: Text('Long press to edit PAR')));
-                        },
-                        onLongPress: () {
-                          ScaffoldMessenger.of(context)
-                            ..clearSnackBars()
-                            ..showSnackBar(SnackBar(content: Text('TODO')));
-                        },
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(' PAR '),
-                            Text(
-                              '4',
-                              style: Theme.of(context).textTheme.headline4,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                preferredSize: Size.fromHeight(kToolbarHeight)),
-          ),
-          SliverList(
-            delegate: SliverChildListDelegate([
-              buildListTile(context, 'Luke', '-1 (6)', 3, true),
-              buildListTile(context, 'Terry', '0 (7)', 4, false),
-              buildListTile(context, 'Terry', '0 (7)', 4, false),
-              buildListTile(context, 'Terry', '0 (7)', 4, false),
-              buildListTile(context, 'Terry', '0 (7)', 4, false),
-              buildListTile(context, 'Terry', '0 (7)', 4, false),
-              buildListTile(context, 'Terry', '0 (7)', 4, false),
-              buildListTile(context, 'Terry', '0 (7)', 4, false),
-              buildListTile(context, 'Terry', '0 (7)', 4, false),
-              buildListTile(context, 'Terry', '0 (7)', 4, false),
-              SizedBox(height: 68),
-            ]),
-          ),
-        ],
+      appBar: AppBar(
+        elevation: 0,
+        title: Text(match.course.name),
+      ),
+      body: PageView.builder(
+        scrollDirection: Axis.horizontal,
+        controller: controller,
+        itemCount: match.course.numHoles,
+        itemBuilder: (BuildContext context, int index) {
+          return buildCustomScrollView(context, index);
+        },
       ),
       floatingActionButton: Row(
         mainAxisAlignment: MainAxisAlignment.end,
@@ -101,7 +39,17 @@ class HoleScreen extends StatelessWidget {
             heroTag: 'prev_hole',
             mini: true,
             tooltip: 'Move to previous hole',
-            onPressed: () {},
+            onPressed: () {
+              final pageNumber = controller.page?.round() ?? 0;
+              if (pageNumber > 0) {
+                controller.previousPage(
+                    duration: Duration(milliseconds: 200),
+                    curve: Curves.easeIn);
+              } else {
+                // Go back to scorecard when on the first hole
+                Navigator.of(context).pop();
+              }
+            },
             child: Icon(Icons.arrow_back),
           ),
           SizedBox(
@@ -109,7 +57,20 @@ class HoleScreen extends StatelessWidget {
           ),
           FloatingActionButton.extended(
             heroTag: 'next_hole',
-            onPressed: null,
+            onPressed: () {
+              // Clear existing snackbars on page turn
+              final scaffoldMessenger = ScaffoldMessenger.of(context)
+                ..clearSnackBars();
+              final pageNumber = controller.page?.round() ?? 0;
+              if (pageNumber < (match.course.numHoles - 1)) {
+                controller.nextPage(
+                    duration: Duration(milliseconds: 200),
+                    curve: Curves.easeIn);
+              } else {
+                scaffoldMessenger.showSnackBar(
+                    SnackBar(content: Text('This is the last hole!')));
+              }
+            },
             tooltip: 'Move to next hole',
             label: Text('Next Hole'),
             icon: Icon(Icons.arrow_forward),
@@ -119,42 +80,97 @@ class HoleScreen extends StatelessWidget {
     );
   }
 
-  Widget buildListTile(
-    BuildContext context,
-    String name,
-    String overallScore,
-    int score,
-    bool isMe,
-  ) {
-    return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          child: Icon(Icons.person),
+  StreamBuilder<QuerySnapshot<Map<String, dynamic>>> buildStreamBuilder(
+      int index) {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('matches')
+          .doc(match.id)
+          .collection('scorecard')
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          final w = Center(
+            child: CircularProgressIndicator(),
+          );
+          return SliverList(delegate: SliverChildListDelegate([w]));
+        }
+        final playerData = snapshot.data?.docs;
+        if (snapshot.hasData && playerData != null) {
+          final List<Widget> playerTiles;
+
+          playerTiles = playerData.map((snapshot) {
+            final userStrokes = UserStrokes.fromJson(snapshot.data());
+            final isMe = (FirebaseHelper.getUserId() ?? '<unknown>') ==
+                userStrokes.user.id;
+
+            return PlayerHoleScore(
+              match: match,
+              userStrokes: userStrokes,
+              holeIndex: index,
+              isMe: isMe,
+            );
+          }).toList();
+
+          return SliverList(
+            delegate: SliverChildListDelegate(playerTiles),
+          );
+        }
+        final w = Text(':(');
+        return SliverList(delegate: SliverChildListDelegate([w]));
+      },
+    );
+  }
+
+  CustomScrollView buildCustomScrollView(BuildContext context, int index) {
+    return CustomScrollView(
+      slivers: [
+        SliverAppBar(
+          leading: Container(),
+          leadingWidth: 0,
+          pinned: true,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    'HOLE ',
+                    style: Theme.of(context).textTheme.bodyText2,
+                  ),
+                  Text(
+                    '${index + 1}',
+                    style: Theme.of(context).textTheme.headline4,
+                  ),
+                ],
+              ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    ' PAR ',
+                    style: Theme.of(context).textTheme.bodyText2,
+                  ),
+                  Text(
+                    match.course.pars[index].toString(),
+                    style: Theme.of(context).textTheme.headline4,
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-        title: Text(name),
-        subtitle: Text(overallScore),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              onPressed: isMe ? () {} : null,
-              icon: Icon(isMe ? Icons.remove : null),
-              splashRadius: Material.defaultSplashRadius / 1.5,
-              tooltip: isMe ? 'Decrement score' : null,
-            ),
-            Text(
-              '$score',
-              style: Theme.of(context).textTheme.headline5,
-            ),
-            IconButton(
-              onPressed: isMe ? () {} : null,
-              icon: Icon(isMe ? Icons.add : null),
-              splashRadius: Material.defaultSplashRadius / 1.5,
-              tooltip: isMe ? 'Increment score' : null,
-            ),
-          ],
+        buildStreamBuilder(index),
+        SliverList(
+          delegate: SliverChildListDelegate([
+            SizedBox(height: 68),
+          ]),
         ),
-      ),
+      ],
     );
   }
 }
