@@ -1,4 +1,6 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../db/firebase_helper.dart';
 import '../models/course.dart';
@@ -50,6 +52,8 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
     const box8 = const SizedBox(width: 8, height: 8);
     const box16 = const SizedBox(width: 16, height: 16);
 
+    final existingCourses = context.watch<List<Course>>();
+
     return Scaffold(
       appBar: AppBar(
         title: Text('New Match Screen'),
@@ -57,52 +61,56 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Text(
-                    'Course:',
-                    style: Theme.of(context).textTheme.headline5,
-                  ),
-                  box8,
-                  // TODO: add existing matches
-                  DropdownButton(
-                    onChanged: (value) async {
-                      setState(() {
-                        _selectedValue = value as String;
-                      });
-                    },
-                    value: _selectedValue,
-                    items: [
-                      DropdownMenuItem(
-                        child: Row(
-                          children: [
-                            Icon(null),
-                            box8,
-                            Text('Hello World!'),
-                          ],
-                        ),
-                        value: '1',
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Course:',
+                      style: Theme.of(context).textTheme.headline5,
+                    ),
+                    box8,
+                    IntrinsicWidth(
+                      child: DropdownButtonFormField(
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        validator: (value) {
+                          if (value == null) return 'Select a course';
+                        },
+                        onChanged: (value) async {
+                          setState(() {
+                            _selectedValue = value as String;
+                          });
+                        },
+                        value: _selectedValue,
+                        items: [
+                          DropdownMenuItem(
+                            child: Row(
+                              children: [
+                                Icon(Icons.add_circle_outline),
+                                box8,
+                                Text('New Course!'),
+                              ],
+                            ),
+                            value: 'new-course',
+                          ),
+                          ...existingCourses.map(
+                            (e) {
+                              print(e.name);
+                              return DropdownMenuItem(
+                                child: Text(e.name),
+                                value: e.id,
+                              );
+                            },
+                          ),
+                        ],
                       ),
-                      DropdownMenuItem(
-                        child: Row(
-                          children: [
-                            Icon(Icons.add_circle_outline),
-                            box8,
-                            Text('New Course!'),
-                          ],
-                        ),
-                        value: 'new-course',
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              if (_selectedValue == 'new-course') ...[
-                Form(
-                  key: _formKey,
-                  child: Card(
+                    ),
+                  ],
+                ),
+                if (_selectedValue == 'new-course') ...[
+                  Card(
                     child: Container(
                       padding: EdgeInsets.all(16),
                       width: double.infinity,
@@ -217,83 +225,83 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
                         ],
                       ),
                     ),
-                  ),
-                )
-              ],
-              box16,
-              Row(
-                children: [
-                  Text(
-                    'Date:',
-                    style: Theme.of(context).textTheme.headline5,
-                  ),
-                  box8,
-                  GestureDetector(
-                    onTap: () async {
-                      _changeFocus();
-                      final result = await showDatePicker(
-                        context: context,
-                        initialDate: _selectedDateTime,
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2100, 12, 31),
-                      );
-
-                      if (result != null) {
-                        setState(() {
-                          _selectedDateTime = DateTime(
-                            result.year,
-                            result.month,
-                            result.day,
-                            _selectedDateTime.hour,
-                            _selectedDateTime.minute,
-                          );
-                        });
-                      }
-                    },
-                    child: Chip(
-                      label:
-                          Text(utils.dateFormatter.format(_selectedDateTime)),
-                    ),
-                  ),
-                  box8,
-                  GestureDetector(
-                    onTap: () async {
-                      _changeFocus();
-                      final result = await showTimePicker(
-                          context: context,
-                          initialTime:
-                              TimeOfDay.fromDateTime(_selectedDateTime));
-
-                      if (result != null) {
-                        setState(() {
-                          _selectedDateTime = DateTime(
-                            _selectedDateTime.year,
-                            _selectedDateTime.month,
-                            _selectedDateTime.day,
-                            result.hour,
-                            result.minute,
-                          );
-                        });
-                      }
-                    },
-                    child: Chip(
-                      label:
-                          Text(utils.timeFormatter.format(_selectedDateTime)),
-                    ),
-                  ),
+                  )
                 ],
-              ),
-              box16,
-              ElevatedButton(
-                onPressed: _submit,
-                child: Text('Submit'),
-                style: ElevatedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(32.0)),
-                  textStyle: Theme.of(context).textTheme.headline5,
+                box16,
+                Row(
+                  children: [
+                    Text(
+                      'Date:',
+                      style: Theme.of(context).textTheme.headline5,
+                    ),
+                    box8,
+                    GestureDetector(
+                      onTap: () async {
+                        _changeFocus();
+                        final result = await showDatePicker(
+                          context: context,
+                          initialDate: _selectedDateTime,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2100, 12, 31),
+                        );
+
+                        if (result != null) {
+                          setState(() {
+                            _selectedDateTime = DateTime(
+                              result.year,
+                              result.month,
+                              result.day,
+                              _selectedDateTime.hour,
+                              _selectedDateTime.minute,
+                            );
+                          });
+                        }
+                      },
+                      child: Chip(
+                        label:
+                            Text(utils.dateFormatter.format(_selectedDateTime)),
+                      ),
+                    ),
+                    box8,
+                    GestureDetector(
+                      onTap: () async {
+                        _changeFocus();
+                        final result = await showTimePicker(
+                            context: context,
+                            initialTime:
+                                TimeOfDay.fromDateTime(_selectedDateTime));
+
+                        if (result != null) {
+                          setState(() {
+                            _selectedDateTime = DateTime(
+                              _selectedDateTime.year,
+                              _selectedDateTime.month,
+                              _selectedDateTime.day,
+                              result.hour,
+                              result.minute,
+                            );
+                          });
+                        }
+                      },
+                      child: Chip(
+                        label:
+                            Text(utils.timeFormatter.format(_selectedDateTime)),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+                box16,
+                ElevatedButton(
+                  onPressed: _submit,
+                  child: Text('Submit'),
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(32.0)),
+                    textStyle: Theme.of(context).textTheme.headline5,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -302,45 +310,42 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
 
   void _submit() {
     _focusNode.unfocus();
-    print('onPressed w/ value: $_selectedValue');
 
-    // No course provide, new or old.
-    if (_selectedValue == null) {
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(
-          content: Text('Please select a course.'),
-        ));
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
+    final Course course;
     // New match with new course.
     if (_selectedValue == 'new-course') {
-      if (!_formKey.currentState!.validate()) {
-        ScaffoldMessenger.of(context)
-          ..clearSnackBars()
-          ..showSnackBar(SnackBar(
-            content: Text('You must provide a Course Name!'),
-          ));
-        return;
-      }
       final name = _nameController.text;
       final pars = _holes.getRange(0, int.parse(_holeController.text)).toList();
-      var course = Course('<placeholder>', name, pars);
+      final tempCourse = Course('<placeholder>', name, pars);
       // Update course to get correct id
-      course = FirebaseHelper.createCourse(course).item1;
-
-      final match = Match(
-        id: '<placeholder>',
-        course: course,
-        datetime: _selectedDateTime,
-        players: [
-          FirebaseHelper.getUserId()!,
-        ],
-      );
-
-      FirebaseHelper.createMatch(match);
+      course = FirebaseHelper.createCourse(tempCourse).item1;
     }
+    // New match with existing course
+    else {
+      final tempCourse = context
+          .read<List<Course>>()
+          .firstWhereOrNull((element) => element.id == _selectedValue);
+      if (tempCourse == null) {
+        print('Could not find course with id "$_selectedValue"');
+        return;
+      }
+      course = tempCourse;
+    }
+
+    final match = Match(
+      id: '<placeholder>',
+      course: course,
+      datetime: _selectedDateTime,
+      players: [
+        FirebaseHelper.getUserId()!,
+      ],
+    );
+
+    FirebaseHelper.createMatch(match);
   }
 
   void _changeFocus() {

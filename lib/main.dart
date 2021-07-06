@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../utils/utils.dart' as utils;
 import 'db/firebase_helper.dart';
+import 'models/course.dart';
 import 'models/match.dart';
 import 'models/user_strokes.dart';
 import 'screens/auth_screen.dart';
@@ -150,8 +151,26 @@ class HomePage extends StatelessWidget {
             label: 'Create a new match',
             labelStyle: TextStyle(fontSize: 18.0),
             onTap: () {
-              Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => NewMatchScreen()));
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => StreamProvider<List<Course>>(
+                  create: (BuildContext context) {
+                    return FirebaseFirestore.instance
+                        .collection('courses')
+                        .snapshots()
+                        .map((event) {
+                      return event.docs.map((element) {
+                        final data = element.data();
+                        data['id'] = element.id;
+                        return Course.fromJson(data);
+                      }).toList();
+                    });
+                  },
+                  initialData: [],
+                  builder: (context, child) {
+                    return NewMatchScreen();
+                  },
+                ),
+              ));
             },
           ),
         ],
