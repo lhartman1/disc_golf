@@ -18,7 +18,7 @@ class _TimestampConverter implements JsonConverter<DateTime, Timestamp> {
   Timestamp toJson(DateTime date) => Timestamp.fromDate(date);
 }
 
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class Match {
   const Match({
     required this.id,
@@ -32,6 +32,19 @@ class Match {
   @_TimestampConverter()
   final DateTime datetime;
   final List<String> players;
+
+  Match copyWith({
+    String? id,
+    Course? course,
+    DateTime? datetime,
+    List<String>? players,
+  }) =>
+      Match(
+        id: id ?? this.id,
+        course: course ?? this.course,
+        datetime: datetime ?? this.datetime,
+        players: players ?? this.players,
+      );
 
   factory Match.fromJson(Map<String, dynamic> json) => _$MatchFromJson(json);
 

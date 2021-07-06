@@ -3,13 +3,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../utils/utils.dart' as utils;
 import 'db/firebase_helper.dart';
 import 'models/match.dart';
 import 'models/user_strokes.dart';
 import 'screens/auth_screen.dart';
+import 'screens/new_match_screen.dart';
 import 'screens/qr_scan_screen.dart';
 import 'screens/score_card_screen.dart';
 
@@ -149,15 +150,8 @@ class HomePage extends StatelessWidget {
             label: 'Create a new match',
             labelStyle: TextStyle(fontSize: 18.0),
             onTap: () {
-              FirebaseHelper.createMatch();
-            },
-          ),
-          SpeedDialChild(
-            child: Icon(Icons.post_add),
-            label: 'Update match',
-            labelStyle: TextStyle(fontSize: 18.0),
-            onTap: () {
-              FirebaseHelper.updateMatch();
+              Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => NewMatchScreen()));
             },
           ),
         ],
@@ -242,8 +236,8 @@ class HomePage extends StatelessWidget {
                   child: Card(
                     child: ListTile(
                       title: Text(match.course.name),
-                      subtitle: Text(
-                          DateFormat.yMEd().add_jm().format(match.datetime)),
+                      subtitle:
+                          Text(utils.dateTimeFormatter.format(match.datetime)),
                     ),
                   ),
                 );

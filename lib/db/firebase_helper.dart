@@ -1,11 +1,22 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
+import 'package:tuple/tuple.dart';
 
+import '../models/course.dart';
 import '../models/match.dart';
 import '../models/user.dart';
+import '../models/user_strokes.dart';
 
 abstract class FirebaseHelper {
   static String? getUserId() => auth.FirebaseAuth.instance.currentUser?.uid;
+
+  static Future<User?> getCurrentUser() {
+    final userId = getUserId();
+    if (userId != null) {
+      return getUser(userId);
+    }
+    return Future.value();
+  }
 
   static Future<User?> getUser(String uid) async {
     final userSnapshot =
@@ -17,22 +28,49 @@ abstract class FirebaseHelper {
     }
   }
 
-  static void createMatch() {
-    FirebaseFirestore.instance.collection('matches').doc()
-      ..set({
-        'course': {
-          'id': '<id goes here>',
-          'name': 'Beautiful new course!',
-          'pars': [3, 3, 3, 4, 5, 3, 4, 3, 4],
-        },
-        'datetime': DateTime.now(),
-        'players': [getUserId() ?? '<unknown>'],
-      })
-      ..collection('scorecard').doc().set({
-        'user': {
-          'email': 'doesitmatter@noitdoesnt.com',
-        },
-      });
+  // This assumes that course comes in with a placeholder id
+  static Tuple2<Course, Future> createCourse(Course course) {
+    final courseDoc = FirebaseFirestore.instance.collection('courses').doc();
+
+    // The id will be the document id in Firebase
+    final courseJson = course.toJson()..remove('id');
+
+    // But still update the course
+    course = course.copyWith(id: courseDoc.id);
+
+    return Tuple2(
+      course,
+      courseDoc.set(courseJson),
+    );
+  }
+
+  // This assumes that match comes in with a placeholder id
+  static Tuple2<Match, Future> createMatch(Match match) {
+    final matchDoc = FirebaseFirestore.instance.collection('matches').doc();
+
+    // The id will be the document id in Firebase
+    final matchJson = match.toJson()..remove('id');
+
+    // But still update the match
+    match = match.copyWith(id: matchDoc.id);
+
+    // This is kind of ugly, but it allows for not required the Tuple to be
+    // wrapped in a Future
+    return Tuple2(
+      match,
+      getCurrentUser().then((user) {
+        final userStrokes =
+            UserStrokes(user!, List.generate(match.course.numHoles, (_) => 0));
+        print('course: ${match.course.toJson()}');
+        return Future.wait([
+          matchDoc.set(matchJson),
+          matchDoc
+              .collection('scorecard')
+              .doc(user.id)
+              .set(userStrokes.toJson()),
+        ]);
+      }),
+    );
   }
 
   static Future updateScore(String userId, List<int> strokes, String matchId) {

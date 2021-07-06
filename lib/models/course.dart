@@ -12,6 +12,17 @@ class Course {
 
   int get numHoles => pars.length;
 
+  Course copyWith({
+    String? id,
+    String? name,
+    List<int>? pars,
+  }) =>
+      Course(
+        id ?? this.id,
+        name ?? this.name,
+        pars ?? this.pars,
+      );
+
   factory Course.fromJson(Map<String, dynamic> json) => _$CourseFromJson(json);
 
   Map<String, dynamic> toJson() => _$CourseToJson(this);

@@ -5,7 +5,7 @@ import 'user.dart';
 
 part 'user_strokes.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class UserStrokes {
   const UserStrokes(this.user, this.strokes);
 
