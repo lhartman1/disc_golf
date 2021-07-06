@@ -1,8 +1,8 @@
-import 'package:disc_golf/db/firebase_helper.dart';
-import 'package:disc_golf/models/course.dart';
-import 'package:disc_golf/models/match.dart';
 import 'package:flutter/material.dart';
 
+import '../db/firebase_helper.dart';
+import '../models/course.dart';
+import '../models/match.dart';
 import '../utils/utils.dart' as utils;
 
 const _DEFAULT_PAR = 3;
@@ -285,37 +285,7 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
               ),
               box16,
               ElevatedButton(
-                onPressed: () {
-                  _focusNode.unfocus();
-                  print('onPressed w/ value: $_selectedValue');
-                  if (_selectedValue == 'new-course') {
-                    if (!_formKey.currentState!.validate()) {
-                      ScaffoldMessenger.of(context)
-                        ..clearSnackBars()
-                        ..showSnackBar(SnackBar(
-                          content: Text('You must provide a Course Name!'),
-                        ));
-                      return;
-                    }
-                    final name = _nameController.text;
-                    final pars = _holes
-                        .getRange(0, int.parse(_holeController.text))
-                        .toList();
-                    var course = Course('<placeholder>', name, pars);
-                    course = FirebaseHelper.createCourse(course).item1;
-
-                    final match = Match(
-                      id: '<placeholder>',
-                      course: course,
-                      datetime: _selectedDateTime,
-                      players: [
-                        FirebaseHelper.getUserId()!,
-                      ],
-                    );
-
-                    FirebaseHelper.createMatch(match);
-                  }
-                },
+                onPressed: _submit,
                 child: Text('Submit'),
                 style: ElevatedButton.styleFrom(
                   shape: RoundedRectangleBorder(
@@ -328,6 +298,49 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
         ),
       ),
     );
+  }
+
+  void _submit() {
+    _focusNode.unfocus();
+    print('onPressed w/ value: $_selectedValue');
+
+    // No course provide, new or old.
+    if (_selectedValue == null) {
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(
+          content: Text('Please select a course.'),
+        ));
+      return;
+    }
+
+    // New match with new course.
+    if (_selectedValue == 'new-course') {
+      if (!_formKey.currentState!.validate()) {
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(
+            content: Text('You must provide a Course Name!'),
+          ));
+        return;
+      }
+      final name = _nameController.text;
+      final pars = _holes.getRange(0, int.parse(_holeController.text)).toList();
+      var course = Course('<placeholder>', name, pars);
+      // Update course to get correct id
+      course = FirebaseHelper.createCourse(course).item1;
+
+      final match = Match(
+        id: '<placeholder>',
+        course: course,
+        datetime: _selectedDateTime,
+        players: [
+          FirebaseHelper.getUserId()!,
+        ],
+      );
+
+      FirebaseHelper.createMatch(match);
+    }
   }
 
   void _changeFocus() {
