@@ -15,8 +15,6 @@ class ScoreCardScreen extends StatelessWidget {
     final userStrokesList = context.watch<List<UserStrokes>>();
     final match = context.read<Match>();
 
-    print('ScoreCardScreen: build:');
-
     return Scaffold(
       appBar: AppBar(
         title: Text(match.course.name),

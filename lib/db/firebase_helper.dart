@@ -61,7 +61,6 @@ abstract class FirebaseHelper {
       getCurrentUser().then((user) {
         final userStrokes =
             UserStrokes(user!, List.generate(match.course.numHoles, (_) => 0));
-        print('course: ${match.course.toJson()}');
         return Future.wait([
           matchDoc.set(matchJson),
           matchDoc

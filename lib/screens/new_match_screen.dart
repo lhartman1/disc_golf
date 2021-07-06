@@ -314,8 +314,6 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
                     );
 
                     FirebaseHelper.createMatch(match);
-
-                    print('Did I get here????');
                   }
                 },
                 child: Text('Submit'),

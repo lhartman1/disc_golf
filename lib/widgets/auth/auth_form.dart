@@ -37,7 +37,6 @@ class _AuthFormState extends State<AuthForm> {
   }
 
   void _trySubmit() {
-    print('trySubmit');
     final isValid = _formKey.currentState?.validate();
     FocusScope.of(context).unfocus();
 
