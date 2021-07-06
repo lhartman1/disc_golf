@@ -150,8 +150,9 @@ class HomePage extends StatelessWidget {
             child: Icon(Icons.post_add),
             label: 'Create a new match',
             labelStyle: TextStyle(fontSize: 18.0),
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
+            onTap: () async {
+              final match =
+                  await Navigator.of(context).push<Match>(MaterialPageRoute(
                 builder: (context) => StreamProvider<List<Course>>(
                   create: (BuildContext context) {
                     return FirebaseFirestore.instance
@@ -171,6 +172,37 @@ class HomePage extends StatelessWidget {
                   },
                 ),
               ));
+
+              // Navigate to new match if it exists
+              if (match != null) {
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) {
+                    return MultiProvider(
+                      providers: [
+                        Provider<Match>.value(value: match),
+                        StreamProvider<List<UserStrokes>>(
+                          create: (context) {
+                            return FirebaseFirestore.instance
+                                .collection('matches')
+                                .doc(match.id)
+                                .collection('scorecard')
+                                .snapshots()
+                                .map((event) {
+                              return event.docs.map((e) {
+                                return UserStrokes.fromJson(e.data());
+                              }).toList();
+                            });
+                          },
+                          initialData: [],
+                        ),
+                      ],
+                      builder: (context, child) {
+                        return ScoreCardScreen();
+                      },
+                    );
+                  },
+                ));
+              }
             },
           ),
         ],

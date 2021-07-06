@@ -26,6 +26,7 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
   late TextEditingController _holeController;
   late FocusNode _focusNode;
   List<int> _holes = List.generate(_MAX_HOLES, (index) => _DEFAULT_PAR);
+  var _isLoading = false;
 
   @override
   void initState() {
@@ -293,7 +294,14 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
                 box16,
                 ElevatedButton(
                   onPressed: _submit,
-                  child: Text('Submit'),
+                  child: _isLoading
+                      ? Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: CircularProgressIndicator(
+                            color: Theme.of(context).accentColor,
+                          ),
+                        )
+                      : Text('Submit'),
                   style: ElevatedButton.styleFrom(
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(32.0)),
@@ -314,6 +322,10 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
+
+    setState(() {
+      _isLoading = true;
+    });
 
     final Course course;
     // New match with new course.
@@ -345,7 +357,21 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
       ],
     );
 
-    FirebaseHelper.createMatch(match);
+    final result = FirebaseHelper.createMatch(match);
+
+    result.item2.then((_) {
+      Navigator.of(context).pop(result.item1);
+    }).catchError((err) {
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(
+          content: Text(err),
+        ));
+      print(err);
+      setState(() {
+        _isLoading = false;
+      });
+    });
   }
 
   void _changeFocus() {
