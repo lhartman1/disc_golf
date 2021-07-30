@@ -6,4 +6,10 @@ This project also uses Firebase Authentication for user accounts and Firebase Cl
 
 ## Getting Started
 
-To run this with your own Firebase account, make sure to put the `google-services.json` file in [android/app](android/app).
+### Android
+- Add an Android app to your Firebase project.
+- Firebase will provide a file named `google-services.json`. Place this file in [android/app](android/app).
+
+### Web
+- Add a web app to your Firebase project.
+- Copy the configuration provided by Firebase to [web/firebase-config.js.TEMPLATE](web/firebase-config.js.TEMPLATE) and rename it to [web/firebase-config.js](web/firebase-config.js).
