@@ -57,7 +57,7 @@ class _MyAppState extends State<MyApp> {
         if (snapshot.connectionState == ConnectionState.done) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
-            title: 'Flutter Demo',
+            title: 'Disc Golf',
             theme: lightTheme,
             darkTheme: darkTheme,
             home: StreamBuilder(
