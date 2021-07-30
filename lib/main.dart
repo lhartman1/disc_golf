@@ -105,7 +105,7 @@ class HomePage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Home Screen'),
+        title: Text('Matches'),
         actions: [
           PopupMenuButton(
             itemBuilder: (context) {
