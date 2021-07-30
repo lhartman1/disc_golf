@@ -47,6 +47,9 @@ app.*.map.json
 
 # Firebase stuffs
 /android/app/google-services.json
+/web/firebase-config.js
+.firebase
+.firebaserc
 
 # Generated Dart files  
 **/*.g.dart
