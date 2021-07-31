@@ -118,15 +118,16 @@ class ScoreCardScreen extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              'Totals',
+                              'Total',
                               style: Theme.of(context).textTheme.bodyText1,
                             ),
+                            Text('(Par ${match.course.parTotal})'),
                           ],
                         ),
                       ),
                       ...List.generate(userStrokesList.length, (index) {
                         String text =
-                            userStrokesList[index].strokeSum.toString();
+                            userStrokesList[index].getScoreSummary(match);
 
                         if (userStrokesList[index].incompleteScore) {
                           text += '*';

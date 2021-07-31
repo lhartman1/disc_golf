@@ -12,6 +12,8 @@ class Course {
 
   int get numHoles => pars.length;
 
+  int get parTotal => pars.fold(0, (prev, curr) => prev + curr);
+
   Course copyWith({
     String? id,
     String? name,

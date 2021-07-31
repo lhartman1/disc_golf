@@ -34,5 +34,17 @@ class UserStrokes {
     return strokeSum - parSum;
   }
 
+  String getScoreSummary(Match match) {
+    final score = getScore(match);
+
+    if (score == 0) {
+      return 'E ($strokeSum)';
+    } else if (score > 0) {
+      return '+$score ($strokeSum)';
+    } else {
+      return '$score ($strokeSum)';
+    }
+  }
+
   bool get incompleteScore => strokes.any((element) => element == 0);
 }

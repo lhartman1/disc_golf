@@ -45,8 +45,6 @@ class _PlayerHoleScoreState extends State<PlayerHoleScore> {
   @override
   Widget build(BuildContext context) {
     final holeStrokes = widget.userStrokes.strokes[widget.holeIndex];
-    final score = widget.userStrokes.getScore(widget.match);
-    final strokeSum = widget.userStrokes.strokeSum;
 
     return Card(
       child: ListTile(
@@ -56,7 +54,7 @@ class _PlayerHoleScoreState extends State<PlayerHoleScore> {
               NetworkImage(widget.userStrokes.user.imageUri.toString()),
         ),
         title: Text(widget.userStrokes.user.username),
-        subtitle: Text('$score ($strokeSum)'),
+        subtitle: Text(widget.userStrokes.getScoreSummary(widget.match)),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
