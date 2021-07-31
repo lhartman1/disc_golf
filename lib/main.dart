@@ -115,6 +115,7 @@ class HomePage extends StatelessWidget {
                     title: Text('Logout'),
                     leading: Icon(Icons.exit_to_app),
                     onTap: () {
+                      Navigator.of(context).pop();
                       FirebaseAuth.instance.signOut();
                     },
                   ),
