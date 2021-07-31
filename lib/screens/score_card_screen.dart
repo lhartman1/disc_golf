@@ -141,6 +141,7 @@ class ScoreCardScreen extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyText1,
                   ),
                 ),
+              SizedBox(height: 68),
             ],
           ),
         ),
