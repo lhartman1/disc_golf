@@ -130,7 +130,7 @@ class HomePage extends StatelessWidget {
         curve: Curves.bounceIn,
         overlayColor: Colors.black,
         overlayOpacity: 0.5,
-        tooltip: 'Add user',
+        tooltip: 'Open menu',
         heroTag: 'speed-dial-hero-tag',
         backgroundColor: Theme.of(context).accentColor,
         children: [
