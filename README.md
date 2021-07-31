@@ -13,3 +13,5 @@ This project also uses Firebase Authentication for user accounts and Firebase Cl
 ### Web
 - Add a web app to your Firebase project.
 - Copy the configuration provided by Firebase to [web/firebase-config.js.TEMPLATE](web/firebase-config.js.TEMPLATE) and rename it to [web/firebase-config.js](web/firebase-config.js).
+- [Enable cross-origin access (CORS)](https://firebase.google.com/docs/storage/web/download-files#cors_configuration) for Firebase Storage so that the web app can access the stored images.
+  - **OR**: run/build with `--web-renderer html` because the [html renderer can load cross-origin images without extra configuration](https://flutter.dev/docs/development/platform-integration/web-images#cross-origin-images).

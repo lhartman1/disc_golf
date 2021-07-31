@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../widgets/auth/auth_form.dart';
 
@@ -20,7 +22,7 @@ class _AuthScreenState extends State<AuthScreen> {
     String email,
     String password,
     String username,
-    File? image,
+    PickedFile? pickedFile,
     bool isLogin,
     BuildContext ctx,
   ) async {
@@ -42,14 +44,22 @@ class _AuthScreenState extends State<AuthScreen> {
         );
 
         final user = authResult.user;
-        if (user == null || image == null) return;
+        if (user == null || pickedFile == null) return;
 
         final ref = FirebaseStorage.instance
             .ref()
             .child('user_image')
             .child(user.uid + '.jpg');
 
-        await ref.putFile(image);
+        final metadata = SettableMetadata(
+          contentType: 'image/jpeg',
+        );
+
+        if (kIsWeb) {
+          await ref.putData(await pickedFile.readAsBytes(), metadata);
+        } else {
+          await ref.putFile(File(pickedFile.path), metadata);
+        }
 
         final url = await ref.getDownloadURL();
 
