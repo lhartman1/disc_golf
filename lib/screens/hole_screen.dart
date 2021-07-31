@@ -8,12 +8,17 @@ import '../widgets/hole/player_hole_score.dart';
 
 class HoleScreen extends StatelessWidget {
   final Match match;
+  final int initialPage;
 
-  const HoleScreen({Key? key, required this.match}) : super(key: key);
+  const HoleScreen({
+    Key? key,
+    required this.match,
+    this.initialPage = 0,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final controller = PageController(initialPage: 0);
+    final controller = PageController(initialPage: initialPage);
     // Use this to get rid of last hole snackbar message
     controller.addListener(() {
       ScaffoldMessenger.of(context).clearSnackBars();

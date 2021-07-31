@@ -39,6 +39,7 @@ class ScoreCardScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               DataTable(
+                showCheckboxColumn: false,
                 columns: [
                   DataColumn(label: Container()),
                   ...List.generate(
@@ -55,6 +56,17 @@ class ScoreCardScreen extends StatelessWidget {
                   ...match.course.pars.asMap().entries.map((e) {
                     final par = e.value;
                     return DataRow(
+                      onSelectChanged: (_) {
+                        // Navigate to the selected hole
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) {
+                            return HoleScreen(
+                              match: match,
+                              initialPage: e.key,
+                            );
+                          },
+                        ));
+                      },
                       cells: [
                         DataCell(
                           Column(
