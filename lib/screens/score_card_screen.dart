@@ -47,7 +47,12 @@ class ScoreCardScreen extends StatelessWidget {
                     (index) {
                       final user = userStrokesList[index].user;
                       return DataColumn(
-                        label: Text(user.username),
+                        label: Expanded(
+                          child: Text(
+                            user.username,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
                       );
                     },
                   ),
