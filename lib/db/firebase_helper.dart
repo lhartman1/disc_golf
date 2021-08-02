@@ -170,6 +170,33 @@ abstract class FirebaseHelper {
     });
   }
 
+  static Stream<Match> getMatch(String matchId) {
+    final query = FirebaseFirestore.instance
+        .collection('matches')
+        .doc(matchId)
+        .snapshots();
+
+    return query.map((event) {
+      final data = event.data()!;
+      data['id'] = event.id;
+      return Match.fromJson(data);
+    });
+  }
+
+  static Stream<Iterable<UserStrokes>> getUserStrokesForMatch(String matchId) {
+    final query = FirebaseFirestore.instance
+        .collection('matches')
+        .doc(matchId)
+        .collection('scorecard')
+        .snapshots();
+
+    return query.map((event) {
+      return event.docs.map((e) {
+        return UserStrokes.fromJson(e.data());
+      });
+    });
+  }
+
   static void updateMatch() {
     FirebaseFirestore.instance
         .collection('matches')

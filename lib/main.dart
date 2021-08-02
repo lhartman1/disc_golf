@@ -3,12 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import 'package:provider/provider.dart';
 
 import 'db/firebase_helper.dart';
-import 'models/course.dart';
 import 'models/match.dart';
-import 'models/user_strokes.dart';
 import 'screens/auth_screen.dart';
 import 'screens/new_match_screen.dart';
 import 'screens/qr_scan_screen.dart';
@@ -154,42 +151,16 @@ class HomePage extends StatelessWidget {
             onTap: () async {
               final match =
                   await Navigator.of(context).push<Match>(MaterialPageRoute(
-                builder: (context) => StreamProvider<Iterable<Course>>(
-                  create: (BuildContext context) => FirebaseHelper.getCourses(),
-                  initialData: [],
-                  builder: (context, child) {
-                    return NewMatchScreen();
-                  },
-                ),
+                builder: (context) {
+                  return NewMatchScreen();
+                },
               ));
 
               // Navigate to new match if it exists
               if (match != null) {
                 Navigator.of(context).push(MaterialPageRoute(
                   builder: (context) {
-                    return MultiProvider(
-                      providers: [
-                        Provider<Match>.value(value: match),
-                        StreamProvider<List<UserStrokes>>(
-                          create: (context) {
-                            return FirebaseFirestore.instance
-                                .collection('matches')
-                                .doc(match.id)
-                                .collection('scorecard')
-                                .snapshots()
-                                .map((event) {
-                              return event.docs.map((e) {
-                                return UserStrokes.fromJson(e.data());
-                              }).toList();
-                            });
-                          },
-                          initialData: [],
-                        ),
-                      ],
-                      builder: (context, child) {
-                        return ScoreCardScreen();
-                      },
-                    );
+                    return ScoreCardScreen(match);
                   },
                 ));
               }
@@ -248,29 +219,7 @@ class HomePage extends StatelessWidget {
                     // Go to ScoreCard
                     Navigator.push(context, MaterialPageRoute(
                       builder: (context) {
-                        return MultiProvider(
-                          providers: [
-                            Provider<Match>.value(value: match),
-                            StreamProvider<List<UserStrokes>>(
-                              create: (context) {
-                                return FirebaseFirestore.instance
-                                    .collection('matches')
-                                    .doc(match.id)
-                                    .collection('scorecard')
-                                    .snapshots()
-                                    .map((event) {
-                                  return event.docs.map((e) {
-                                    return UserStrokes.fromJson(e.data());
-                                  }).toList();
-                                });
-                              },
-                              initialData: [],
-                            ),
-                          ],
-                          builder: (context, child) {
-                            return ScoreCardScreen();
-                          },
-                        );
+                        return ScoreCardScreen(match);
                       },
                     ));
                   },

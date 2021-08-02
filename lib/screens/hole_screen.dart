@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../db/firebase_helper.dart';
@@ -7,12 +6,12 @@ import '../models/user_strokes.dart';
 import '../widgets/hole/player_hole_score.dart';
 
 class HoleScreen extends StatelessWidget {
-  final Match match;
+  final Match _match;
   final int initialPage;
 
-  const HoleScreen({
+  const HoleScreen(
+    this._match, {
     Key? key,
-    required this.match,
     this.initialPage = 0,
   }) : super(key: key);
 
@@ -24,19 +23,43 @@ class HoleScreen extends StatelessWidget {
       ScaffoldMessenger.of(context).clearSnackBars();
     });
 
+    final body = StreamBuilder<Match>(
+      stream: FirebaseHelper.getMatch(_match.id),
+      builder: (context, matchSnapshot) {
+        return StreamBuilder<Iterable<UserStrokes>>(
+          stream: FirebaseHelper.getUserStrokesForMatch(_match.id),
+          builder: (context, userStrokesSnapshot) {
+            if (matchSnapshot.connectionState == ConnectionState.waiting ||
+                userStrokesSnapshot.connectionState ==
+                    ConnectionState.waiting) {
+              return Center(child: CircularProgressIndicator());
+            }
+            final match = matchSnapshot.data;
+            final userStrokesIterable = userStrokesSnapshot.data;
+            if (match == null || userStrokesIterable == null) {
+              return Center(child: Text(':('));
+            }
+
+            return PageView.builder(
+              scrollDirection: Axis.horizontal,
+              controller: controller,
+              itemCount: match.course.numHoles,
+              itemBuilder: (BuildContext context, int index) {
+                return _buildCustomScrollView(
+                    context, match, userStrokesIterable, index);
+              },
+            );
+          },
+        );
+      },
+    );
+
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        title: Text(match.course.name),
+        title: Text(_match.course.name),
       ),
-      body: PageView.builder(
-        scrollDirection: Axis.horizontal,
-        controller: controller,
-        itemCount: match.course.numHoles,
-        itemBuilder: (BuildContext context, int index) {
-          return buildCustomScrollView(context, index);
-        },
-      ),
+      body: body,
       floatingActionButton: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
@@ -67,7 +90,7 @@ class HoleScreen extends StatelessWidget {
               final scaffoldMessenger = ScaffoldMessenger.of(context)
                 ..clearSnackBars();
               final pageNumber = controller.page?.round() ?? 0;
-              if (pageNumber < (match.course.numHoles - 1)) {
+              if (pageNumber < (_match.course.numHoles - 1)) {
                 controller.nextPage(
                     duration: Duration(milliseconds: 200),
                     curve: Curves.easeIn);
@@ -85,49 +108,31 @@ class HoleScreen extends StatelessWidget {
     );
   }
 
-  StreamBuilder<QuerySnapshot<Map<String, dynamic>>> buildStreamBuilder(
-      int index) {
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: FirebaseFirestore.instance
-          .collection('matches')
-          .doc(match.id)
-          .collection('scorecard')
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          final w = Center(
-            child: CircularProgressIndicator(),
-          );
-          return SliverList(delegate: SliverChildListDelegate([w]));
-        }
-        final playerData = snapshot.data?.docs;
-        if (snapshot.hasData && playerData != null) {
-          final List<Widget> playerTiles;
+  SliverList _buildPlayerHoleScores(
+    Iterable<UserStrokes> userStrokesIterable,
+    Match match,
+    int index,
+  ) {
+    final playerHoleScores = userStrokesIterable.map((e) {
+      final isMe = FirebaseHelper.getUserId() == e.user.id;
 
-          playerTiles = playerData.map((snapshot) {
-            final userStrokes = UserStrokes.fromJson(snapshot.data());
-            final isMe = (FirebaseHelper.getUserId() ?? '<unknown>') ==
-                userStrokes.user.id;
+      return PlayerHoleScore(
+        match: match,
+        userStrokes: e,
+        holeIndex: index,
+        isMe: isMe,
+      );
+    }).toList();
 
-            return PlayerHoleScore(
-              match: match,
-              userStrokes: userStrokes,
-              holeIndex: index,
-              isMe: isMe,
-            );
-          }).toList();
-
-          return SliverList(
-            delegate: SliverChildListDelegate(playerTiles),
-          );
-        }
-        final w = Text(':(');
-        return SliverList(delegate: SliverChildListDelegate([w]));
-      },
-    );
+    return SliverList(delegate: SliverChildListDelegate(playerHoleScores));
   }
 
-  CustomScrollView buildCustomScrollView(BuildContext context, int index) {
+  CustomScrollView _buildCustomScrollView(
+    BuildContext context,
+    Match match,
+    Iterable<UserStrokes> userStrokesIterable,
+    int index,
+  ) {
     return CustomScrollView(
       slivers: [
         SliverAppBar(
@@ -169,7 +174,7 @@ class HoleScreen extends StatelessWidget {
             ],
           ),
         ),
-        buildStreamBuilder(index),
+        _buildPlayerHoleScores(userStrokesIterable, match, index),
         SliverList(
           delegate: SliverChildListDelegate([
             SizedBox(height: 68),
