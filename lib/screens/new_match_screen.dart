@@ -339,7 +339,7 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
     // New match with existing course
     else {
       final tempCourse = context
-          .read<List<Course>>()
+          .read<Iterable<Course>>()
           .firstWhereOrNull((element) => element.id == _selectedValue);
       if (tempCourse == null) {
         print('Could not find course with id "$_selectedValue"');
