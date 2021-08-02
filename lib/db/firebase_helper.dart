@@ -119,7 +119,10 @@ abstract class FirebaseHelper {
       matchDocRef.collection('scorecard').doc(userId).set({
         'strokes': List.generate(match.course.numHoles, (index) => 0),
         'user': user.toJson(),
-      })
+      }),
+
+      // Add course to user's courses
+      addCourseToUser(match.course),
     ]);
 
     return true;
@@ -140,6 +143,15 @@ abstract class FirebaseHelper {
           .doc(userId)
           .delete(),
     ]);
+  }
+
+  static Future addCourseToUser(Course course) {
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(getUserId())
+        .collection('courses')
+        .doc(course.id)
+        .set(course.toJson());
   }
 
   static Stream<Iterable<Course>> getCourses() {
