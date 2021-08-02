@@ -98,6 +98,10 @@ class HomePage extends StatelessWidget {
           'players',
           arrayContains: FirebaseHelper.getUserId() ?? '<unknown>',
         )
+        .orderBy(
+          'datetime',
+          descending: true,
+        )
         .snapshots();
 
     return Scaffold(
