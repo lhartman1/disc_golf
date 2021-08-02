@@ -30,7 +30,11 @@ abstract class FirebaseHelper {
 
   // This assumes that course comes in with a placeholder id
   static Tuple2<Course, Future> createCourse(Course course) {
-    final courseDoc = FirebaseFirestore.instance.collection('courses').doc();
+    final courseDoc = FirebaseFirestore.instance
+        .collection('users')
+        .doc(getUserId())
+        .collection('courses')
+        .doc();
 
     // The id will be the document id in Firebase
     final courseJson = course.toJson()..remove('id');
@@ -136,6 +140,22 @@ abstract class FirebaseHelper {
           .doc(userId)
           .delete(),
     ]);
+  }
+
+  static Stream<Iterable<Course>> getCourses() {
+    final query = FirebaseFirestore.instance
+        .collection('users')
+        .doc(getUserId())
+        .collection('courses')
+        .snapshots();
+
+    return query.map((event) {
+      return event.docs.map((e) {
+        final data = e.data();
+        data['id'] = e.id;
+        return Course.fromJson(data);
+      });
+    });
   }
 
   static void updateMatch() {

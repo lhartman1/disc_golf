@@ -53,7 +53,7 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
     const box8 = const SizedBox(width: 8, height: 8);
     const box16 = const SizedBox(width: 16, height: 16);
 
-    final existingCourses = context.watch<List<Course>>();
+    final existingCourses = context.watch<Iterable<Course>>();
 
     return Scaffold(
       appBar: AppBar(

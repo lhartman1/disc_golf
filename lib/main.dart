@@ -154,19 +154,8 @@ class HomePage extends StatelessWidget {
             onTap: () async {
               final match =
                   await Navigator.of(context).push<Match>(MaterialPageRoute(
-                builder: (context) => StreamProvider<List<Course>>(
-                  create: (BuildContext context) {
-                    return FirebaseFirestore.instance
-                        .collection('courses')
-                        .snapshots()
-                        .map((event) {
-                      return event.docs.map((element) {
-                        final data = element.data();
-                        data['id'] = element.id;
-                        return Course.fromJson(data);
-                      }).toList();
-                    });
-                  },
+                builder: (context) => StreamProvider<Iterable<Course>>(
+                  create: (BuildContext context) => FirebaseHelper.getCourses(),
                   initialData: [],
                   builder: (context, child) {
                     return NewMatchScreen();
