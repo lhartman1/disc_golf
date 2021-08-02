@@ -157,19 +157,39 @@ class HoleScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    ' PAR ',
-                    style: Theme.of(context).textTheme.bodyText2,
-                  ),
-                  Text(
-                    match.course.pars[index].toString(),
-                    style: Theme.of(context).textTheme.headline4,
-                  ),
-                ],
+              GestureDetector(
+                onTap: () {
+                  ScaffoldMessenger.of(context)
+                    ..clearSnackBars()
+                    ..showSnackBar(
+                        SnackBar(content: Text('Long Press to Edit Par')));
+                },
+                onLongPress: () async {
+                  final result = await _showParDialog(context, match, index);
+
+                  print('result: $result');
+
+                  if (result == null || result == match.course.pars[index]) {
+                    return;
+                  }
+
+                  match.course.pars[index] = result;
+                  FirebaseHelper.syncParsForMatch(match);
+                },
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      ' PAR ',
+                      style: Theme.of(context).textTheme.bodyText2,
+                    ),
+                    Text(
+                      match.course.pars[index].toString(),
+                      style: Theme.of(context).textTheme.headline4,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -181,6 +201,82 @@ class HoleScreen extends StatelessWidget {
           ]),
         ),
       ],
+    );
+  }
+
+  Future<int?> _showParDialog(BuildContext context, Match match, int index) {
+    return showDialog<int>(
+      context: context,
+      builder: (context) {
+        var par = match.course.pars[index];
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return SimpleDialog(
+              title: Text('New par for Hole ${index + 1}'),
+              contentPadding: const EdgeInsets.fromLTRB(0, 12, 0, 16),
+              children: [
+                SizedBox(height: 16),
+                Center(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Theme.of(context).accentColor,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            if (par > 1) {
+                              setState(() {
+                                par--;
+                              });
+                            }
+                          },
+                          icon: Icon(Icons.remove),
+                        ),
+                        Text(
+                          par.toString(),
+                          style: Theme.of(context).textTheme.headline4,
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            setState(() {
+                              par++;
+                            });
+                          },
+                          icon: Icon(Icons.add),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(par);
+                      },
+                      child: Text('Save'),
+                    ),
+                    SizedBox(width: 24),
+                  ],
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

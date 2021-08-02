@@ -128,6 +128,34 @@ abstract class FirebaseHelper {
     return true;
   }
 
+  /// This function updates for pars for a match and all copies of that course
+  /// for each user.
+  static Future syncParsForMatch(Match match) async {
+    // Update all users' copies of that course for each user playing in the
+    // match.
+    final usersUpdateFutures = match.players.map((playerId) {
+      return FirebaseFirestore.instance
+          .collection('users')
+          .doc(playerId)
+          .collection('courses')
+          .doc(match.course.id)
+          .update({
+        'pars': match.course.pars,
+      });
+    });
+
+    // Update the course in the current match.
+    final matchUpdateFuture =
+        FirebaseFirestore.instance.collection('matches').doc(match.id).update({
+      'course.pars': match.course.pars,
+    });
+
+    return Future.wait([
+      matchUpdateFuture,
+      ...usersUpdateFutures,
+    ]);
+  }
+
   static Future removeUserFromMatch(String userId, String matchId) {
     return Future.wait([
       // Remove from players list
