@@ -87,16 +87,20 @@ class _QRScanScreenState extends State<QRScanScreen> {
     setState(() {
       this.controller = controller;
     });
-    controller.scannedDataStream.listen((scanData) {
+    controller.scannedDataStream.listen((scanData) async {
       if (result != null) return;
 
       setState(() {
         result = scanData;
       });
 
-      FirebaseHelper.addUserToMatch(
-              FirebaseHelper.getUserId() ?? '<unknown>', scanData.code)
-          .then((value) {
+      final user = await FirebaseHelper.getCurrentUser();
+      if (user == null) {
+        result = null;
+        return;
+      }
+
+      FirebaseHelper.addUserToMatch(user, scanData.code).then((value) {
         if (value) {
           Navigator.pop(context);
         } else {

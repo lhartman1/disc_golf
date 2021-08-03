@@ -1,3 +1,4 @@
+import 'package:disc_golf/models/user.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -178,10 +179,34 @@ class ScoreCardScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(_match.course.name),
         actions: [
-          // IconButton(
-          //   onPressed: () {},
-          //   icon: Icon(Icons.person_add_alt),
-          // ),
+          IconButton(
+            tooltip: 'Add an offline player',
+            icon: Icon(Icons.person_add_alt),
+            onPressed: () async {
+              final name = await _showOfflinePlayerDialog(context);
+              if (name == null) return;
+              final user = User(
+                  id: 'offlinePlayer:$name',
+                  email: null,
+                  imageUri: null,
+                  username: name);
+
+              final result =
+                  await FirebaseHelper.addUserToMatch(user, _match.id);
+              if (result == false) {
+                ScaffoldMessenger.of(context)
+                  ..clearSnackBars()
+                  ..showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Could not add "$name" to the match.',
+                      ),
+                      backgroundColor: Theme.of(context).errorColor,
+                    ),
+                  );
+              }
+            },
+          ),
           IconButton(
             icon: Icon(Icons.qr_code),
             tooltip: 'Share game via QR code',
@@ -203,6 +228,72 @@ class ScoreCardScreen extends StatelessWidget {
         icon: Icon(Icons.arrow_forward),
         label: Text('Go to hole 1'),
       ),
+    );
+  }
+
+  Future<String?> _showOfflinePlayerDialog(BuildContext context) {
+    return showDialog<String>(
+      context: context,
+      builder: (context) {
+        var input = '';
+        String? errorText;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return SimpleDialog(
+              title: Text('Add an offline player'),
+              contentPadding: EdgeInsets.zero,
+              children: [
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Player Name',
+                      errorText: errorText,
+                    ),
+                    onChanged: (value) {
+                      input = value;
+                    },
+                  ),
+                ),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  child: Text(
+                      'Note: If the other player has their own device, you may want to consider sharing the match via QR Code.'),
+                ),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          if (input.isEmpty) {
+                            setState(() {
+                              errorText = 'Enter a name to add a player';
+                            });
+                          } else {
+                            Navigator.of(context).pop(input);
+                          }
+                        },
+                        child: Text('Save'),
+                      ),
+                    ],
+                  ),
+                )
+              ],
+            );
+          },
+        );
+      },
     );
   }
 

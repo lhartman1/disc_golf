@@ -8,14 +8,14 @@ class PlayerHoleScore extends StatefulWidget {
   final Match match;
   final UserStrokes userStrokes;
   final int holeIndex;
-  final bool isMe;
+  final bool editable;
 
   const PlayerHoleScore({
     Key? key,
     required this.match,
     required this.userStrokes,
     required this.holeIndex,
-    required this.isMe,
+    required this.editable,
   }) : super(key: key);
 
   @override
@@ -32,7 +32,7 @@ class _PlayerHoleScoreState extends State<PlayerHoleScore> {
     final oldHoleStrokes = oldWidget.userStrokes.strokes[oldWidget.holeIndex];
     final newHoleStrokes = widget.userStrokes.strokes[widget.holeIndex];
 
-    if (!widget.isMe && oldHoleStrokes != newHoleStrokes) {
+    if (!widget.editable && oldHoleStrokes != newHoleStrokes) {
       orangeText = true;
       Future.delayed(Duration(milliseconds: 500), () {
         setState(() {
@@ -45,13 +45,14 @@ class _PlayerHoleScoreState extends State<PlayerHoleScore> {
   @override
   Widget build(BuildContext context) {
     final holeStrokes = widget.userStrokes.strokes[widget.holeIndex];
+    final imageUri = widget.userStrokes.user.imageUri;
 
     return Card(
       child: ListTile(
         leading: CircleAvatar(
-          // child: Icon(Icons.person),
+          child: imageUri == null ? Icon(Icons.person) : null,
           backgroundImage:
-              NetworkImage(widget.userStrokes.user.imageUri.toString()),
+              imageUri == null ? null : NetworkImage(imageUri.toString()),
         ),
         title: Text(widget.userStrokes.user.username),
         subtitle: Text(widget.userStrokes.getScoreSummary(widget.match)),
@@ -59,7 +60,7 @@ class _PlayerHoleScoreState extends State<PlayerHoleScore> {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              onPressed: widget.isMe && holeStrokes > 0
+              onPressed: widget.editable && holeStrokes > 0
                   ? () {
                       // Guard against scores less than 0 in case somehow this
                       // widget didn't get rebuilt with onPressed blocking this
@@ -71,9 +72,9 @@ class _PlayerHoleScoreState extends State<PlayerHoleScore> {
                           widget.userStrokes.strokes, widget.match.id);
                     }
                   : null,
-              icon: Icon(widget.isMe ? Icons.remove : null),
+              icon: Icon(widget.editable ? Icons.remove : null),
               splashRadius: Material.defaultSplashRadius / 1.5,
-              tooltip: widget.isMe ? 'Decrement score' : null,
+              tooltip: widget.editable ? 'Decrement score' : null,
             ),
             AnimatedDefaultTextStyle(
               child: Text('$holeStrokes'),
@@ -87,16 +88,16 @@ class _PlayerHoleScoreState extends State<PlayerHoleScore> {
                   orangeText ? Duration.zero : Duration(milliseconds: 500),
             ),
             IconButton(
-              onPressed: widget.isMe
+              onPressed: widget.editable
                   ? () {
                       widget.userStrokes.strokes[widget.holeIndex]++;
                       FirebaseHelper.updateScore(widget.userStrokes.user.id,
                           widget.userStrokes.strokes, widget.match.id);
                     }
                   : null,
-              icon: Icon(widget.isMe ? Icons.add : null),
+              icon: Icon(widget.editable ? Icons.add : null),
               splashRadius: Material.defaultSplashRadius / 1.5,
-              tooltip: widget.isMe ? 'Increment score' : null,
+              tooltip: widget.editable ? 'Increment score' : null,
             ),
           ],
         ),

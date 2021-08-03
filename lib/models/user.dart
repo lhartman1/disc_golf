@@ -12,9 +12,9 @@ class User {
   });
 
   final String id;
-  final String email;
+  final String? email;
   @JsonKey(name: 'image_url')
-  final Uri imageUri;
+  final Uri? imageUri;
   final String username;
 
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);

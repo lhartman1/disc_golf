@@ -87,8 +87,8 @@ abstract class FirebaseHelper {
     });
   }
 
-  static Future<bool> addUserToMatch(String userId, String matchId) async {
-    print('adding user "$userId" to match "$matchId"');
+  static Future<bool> addUserToMatch(User user, String matchId) async {
+    print('adding user "${user.id}" to match "$matchId"');
 
     final matchDocRef =
         FirebaseFirestore.instance.collection('matches').doc(matchId);
@@ -103,20 +103,16 @@ abstract class FirebaseHelper {
     final match = Match.fromJson(matchDocData);
 
     // Don't add users to matches they are already in
-    if (match.players.contains(userId)) return false;
-
-    // Make sure the user data is accessible
-    final user = await getUser(userId);
-    if (user == null) return false;
+    if (match.players.contains(user.id)) return false;
 
     await Future.wait([
       // Add player to players list
       matchDocRef.update({
-        'players': FieldValue.arrayUnion([userId]),
+        'players': FieldValue.arrayUnion([user.id]),
       }),
 
       // Add player to scorecard
-      matchDocRef.collection('scorecard').doc(userId).set({
+      matchDocRef.collection('scorecard').doc(user.id).set({
         'strokes': List.generate(match.course.numHoles, (index) => 0),
         'user': user.toJson(),
       }),
