@@ -167,8 +167,6 @@ class HoleScreen extends StatelessWidget {
                 onLongPress: () async {
                   final result = await _showParDialog(context, match, index);
 
-                  print('result: $result');
-
                   if (result == null || result == match.course.pars[index]) {
                     return;
                   }
