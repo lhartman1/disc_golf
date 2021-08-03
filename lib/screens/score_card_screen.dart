@@ -40,6 +40,7 @@ class ScoreCardScreen extends StatelessWidget {
                   children: [
                     DataTable(
                       showCheckboxColumn: false,
+                      columnSpacing: 56 / 3, // Default is 56
                       columns: [
                         DataColumn(label: Container()),
                         ...List.generate(
