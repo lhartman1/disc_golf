@@ -215,9 +215,22 @@ abstract class FirebaseHelper {
         .snapshots();
 
     return query.map((event) {
-      return event.docs.map((e) {
+      final userStrokes = event.docs.map((e) {
         return UserStrokes.fromJson(e.data());
-      });
+      }).toList();
+
+      // Sort alphabetically
+      userStrokes.sort((a, b) => a.user.username.compareTo(b.user.username));
+
+      // Put the current player first
+      final indexOfMe = userStrokes.indexWhere(
+          (element) => element.user.id == FirebaseHelper.getUserId());
+      if (indexOfMe > 0) {
+        final me = userStrokes.removeAt(indexOfMe);
+        userStrokes.insert(0, me);
+      }
+
+      return userStrokes;
     });
   }
 
