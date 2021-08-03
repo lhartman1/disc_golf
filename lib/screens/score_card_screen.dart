@@ -35,139 +35,146 @@ class ScoreCardScreen extends StatelessWidget {
             return SingleChildScrollView(
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    DataTable(
-                      showCheckboxColumn: false,
-                      columnSpacing: 56 / 3, // Default is 56
-                      columns: [
-                        DataColumn(label: Container()),
-                        ...List.generate(
-                          userStrokesList.length,
-                          (index) {
-                            final user = userStrokesList[index].user;
-                            return DataColumn(
-                              label: Expanded(
-                                child: Text(
-                                  user.username,
-                                  textAlign: TextAlign.center,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: MediaQuery.of(context).size.width,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      DataTable(
+                        showCheckboxColumn: false,
+                        columnSpacing: 56 / 3, // Default is 56
+                        columns: [
+                          DataColumn(label: Container()),
+                          ...List.generate(
+                            userStrokesList.length,
+                            (index) {
+                              final user = userStrokesList[index].user;
+                              return DataColumn(
+                                label: Expanded(
+                                  child: Text(
+                                    user.username,
+                                    textAlign: TextAlign.center,
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                      rows: [
-                        ...match.course.pars.asMap().entries.map((e) {
-                          final par = e.value;
-                          return DataRow(
-                            onSelectChanged: (_) {
-                              // Navigate to the selected hole
-                              Navigator.of(context).push(MaterialPageRoute(
-                                builder: (context) {
-                                  return HoleScreen(
-                                    match,
-                                    initialPage: e.key,
-                                  );
-                                },
-                              ));
+                              );
                             },
+                          ),
+                        ],
+                        rows: [
+                          ...match.course.pars.asMap().entries.map((e) {
+                            final par = e.value;
+                            return DataRow(
+                              onSelectChanged: (_) {
+                                // Navigate to the selected hole
+                                Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (context) {
+                                    return HoleScreen(
+                                      match,
+                                      initialPage: e.key,
+                                    );
+                                  },
+                                ));
+                              },
+                              cells: [
+                                DataCell(
+                                  Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        'Hole ${e.key + 1}',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText1,
+                                      ),
+                                      Text('(Par ${e.value})'),
+                                    ],
+                                  ),
+                                ),
+                                ...List.generate(
+                                  userStrokesList.length,
+                                  (index) {
+                                    final strokeCount =
+                                        userStrokesList[index].strokes[e.key];
+                                    final strokeCountStr = strokeCount == 0
+                                        ? '-'
+                                        : strokeCount.toString();
+                                    final Color? color;
+                                    if (strokeCount == 0 ||
+                                        strokeCount == par) {
+                                      color = null;
+                                    } else if (strokeCount <= par) {
+                                      color = Colors.green.withOpacity(0.5);
+                                    } else {
+                                      color = Colors.red.withOpacity(0.5);
+                                    }
+
+                                    return DataCell(
+                                      Container(
+                                        alignment: Alignment.center,
+                                        color: color,
+                                        child: Text(
+                                          strokeCountStr,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headline6,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            );
+                          }).toList(),
+                          DataRow(
                             cells: [
                               DataCell(
                                 Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      'Hole ${e.key + 1}',
+                                      'Total',
                                       style:
                                           Theme.of(context).textTheme.bodyText1,
                                     ),
-                                    Text('(Par ${e.value})'),
+                                    Text('(Par ${match.course.parTotal})'),
                                   ],
                                 ),
                               ),
-                              ...List.generate(
-                                userStrokesList.length,
-                                (index) {
-                                  final strokeCount =
-                                      userStrokesList[index].strokes[e.key];
-                                  final strokeCountStr = strokeCount == 0
-                                      ? '-'
-                                      : strokeCount.toString();
-                                  final Color? color;
-                                  if (strokeCount == 0 || strokeCount == par) {
-                                    color = null;
-                                  } else if (strokeCount <= par) {
-                                    color = Colors.green.withOpacity(0.5);
-                                  } else {
-                                    color = Colors.red.withOpacity(0.5);
-                                  }
+                              ...List.generate(userStrokesList.length, (index) {
+                                String text = userStrokesList[index]
+                                    .getScoreSummary(match);
 
-                                  return DataCell(
-                                    Container(
-                                      alignment: Alignment.center,
-                                      color: color,
-                                      child: Text(
-                                        strokeCountStr,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .headline6,
-                                      ),
+                                if (userStrokesList[index].incompleteScore) {
+                                  text += '*';
+                                }
+
+                                return DataCell(
+                                  Center(
+                                    child: Text(
+                                      text,
+                                      style:
+                                          Theme.of(context).textTheme.headline6,
                                     ),
-                                  );
-                                },
-                              ),
+                                  ),
+                                );
+                              })
                             ],
-                          );
-                        }).toList(),
-                        DataRow(
-                          cells: [
-                            DataCell(
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    'Total',
-                                    style:
-                                        Theme.of(context).textTheme.bodyText1,
-                                  ),
-                                  Text('(Par ${match.course.parTotal})'),
-                                ],
-                              ),
-                            ),
-                            ...List.generate(userStrokesList.length, (index) {
-                              String text =
-                                  userStrokesList[index].getScoreSummary(match);
-
-                              if (userStrokesList[index].incompleteScore) {
-                                text += '*';
-                              }
-
-                              return DataCell(
-                                Center(
-                                  child: Text(
-                                    text,
-                                    style:
-                                        Theme.of(context).textTheme.headline6,
-                                  ),
-                                ),
-                              );
-                            })
-                          ],
-                        ),
-                      ],
-                    ),
-                    if (userStrokesList.any((each) => each.incompleteScore))
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Text(
-                          '* denotes an incomplete score',
-                          style: Theme.of(context).textTheme.bodyText1,
-                        ),
+                          ),
+                        ],
                       ),
-                    SizedBox(height: 68),
-                  ],
+                      if (userStrokesList.any((each) => each.incompleteScore))
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Text(
+                            '* denotes an incomplete score',
+                            style: Theme.of(context).textTheme.bodyText1,
+                          ),
+                        ),
+                      SizedBox(height: 68),
+                    ],
+                  ),
                 ),
               ),
             );
