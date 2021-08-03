@@ -54,7 +54,7 @@ class _MyAppState extends State<MyApp> {
         if (snapshot.connectionState == ConnectionState.done) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
-            title: 'Disc Golf',
+            title: 'Disc Golf Mando Scorecard',
             theme: lightTheme,
             darkTheme: darkTheme,
             home: StreamBuilder(

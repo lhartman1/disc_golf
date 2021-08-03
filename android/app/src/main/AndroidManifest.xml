@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.disc_golf">
    <application
-        android:label="Disc Golf"
+        android:label="Disc Golf Mando Scorecard"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
