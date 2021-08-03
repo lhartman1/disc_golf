@@ -86,17 +86,14 @@ class HoleScreen extends StatelessWidget {
           FloatingActionButton.extended(
             heroTag: 'next_hole',
             onPressed: () {
-              // Clear existing snackbars on page turn
-              final scaffoldMessenger = ScaffoldMessenger.of(context)
-                ..clearSnackBars();
               final pageNumber = controller.page?.round() ?? 0;
               if (pageNumber < (_match.course.numHoles - 1)) {
                 controller.nextPage(
                     duration: Duration(milliseconds: 200),
                     curve: Curves.easeIn);
               } else {
-                scaffoldMessenger.showSnackBar(
-                    SnackBar(content: Text('This is the last hole!')));
+                // Go back to scorecard when on the last hole
+                Navigator.of(context).pop();
               }
             },
             tooltip: 'Move to next hole',
