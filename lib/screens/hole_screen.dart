@@ -23,28 +23,28 @@ class HoleScreen extends StatelessWidget {
       ScaffoldMessenger.of(context).clearSnackBars();
     });
 
-    final body = StreamBuilder<Match>(
-      stream: FirebaseHelper.getMatch(_match.id),
-      builder: (context, matchSnapshot) {
-        return StreamBuilder<Iterable<UserStrokes>>(
-          stream: FirebaseHelper.getUserStrokesForMatch(_match.id),
-          builder: (context, userStrokesSnapshot) {
-            if (matchSnapshot.connectionState == ConnectionState.waiting ||
-                userStrokesSnapshot.connectionState ==
-                    ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator());
-            }
-            final match = matchSnapshot.data;
-            final userStrokesIterable = userStrokesSnapshot.data;
-            if (match == null || userStrokesIterable == null) {
-              return Center(child: Text(':('));
-            }
+    final body = PageView.builder(
+      scrollDirection: Axis.horizontal,
+      controller: controller,
+      itemCount: _match.course.numHoles,
+      itemBuilder: (BuildContext context, int index) {
+        return StreamBuilder<Match>(
+          stream: FirebaseHelper.getMatch(_match.id),
+          builder: (context, matchSnapshot) {
+            return StreamBuilder<Iterable<UserStrokes>>(
+              stream: FirebaseHelper.getUserStrokesForMatch(_match.id),
+              builder: (context, userStrokesSnapshot) {
+                if (matchSnapshot.connectionState == ConnectionState.waiting ||
+                    userStrokesSnapshot.connectionState ==
+                        ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                }
+                final match = matchSnapshot.data;
+                final userStrokesIterable = userStrokesSnapshot.data;
+                if (match == null || userStrokesIterable == null) {
+                  return Center(child: Text(':('));
+                }
 
-            return PageView.builder(
-              scrollDirection: Axis.horizontal,
-              controller: controller,
-              itemCount: match.course.numHoles,
-              itemBuilder: (BuildContext context, int index) {
                 return _buildCustomScrollView(
                     context, match, userStrokesIterable, index);
               },
