@@ -6,6 +6,11 @@ This project also uses Firebase Authentication for user accounts and Firebase Cl
 
 ## Getting Started
 
+### All Platforms
+
+- Run `flutter pub run build_runner build` to create generated dart files.
+  - This uses [json_serializable](https://pub.dev/packages/json_serializable) to automate serializing data to/from JSON for files in [lib/models](lib/models).
+
 ### Android
 - Add an Android app to your Firebase project.
 - Firebase will provide a file named `google-services.json`. Place this file in [android/app](android/app).
