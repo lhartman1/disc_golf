@@ -28,10 +28,6 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     final lightTheme = ThemeData(
-      // primarySwatch: Colors.lightBlue,
-      // primaryColor: Colors.lightBlue[200],
-      // accentColor: Colors.amberAccent,
-      // scaffoldBackgroundColor: Colors.cyan[50],
       primarySwatch: Colors.orange,
       primaryColor: Color(0xffff7000),
       accentColor: Colors.amberAccent,

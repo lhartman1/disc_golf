@@ -233,20 +233,4 @@ abstract class FirebaseHelper {
       return userStrokes;
     });
   }
-
-  static void updateMatch() {
-    FirebaseFirestore.instance
-        .collection('matches')
-        .doc('XDSWtmGFowU6cweuPiGK')
-        .update({
-      // 'didit.other.stuff': 'hur',
-      'didit.other.stuff': FieldValue.delete(),
-      // 'didit': {
-      //   'work': 'yea',
-      //   'other': {
-      //     'stuff': 'here',
-      //   },
-      // }
-    });
-  }
 }
