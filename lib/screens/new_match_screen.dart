@@ -5,10 +5,7 @@ import '../db/firebase_helper.dart';
 import '../models/course.dart';
 import '../models/match.dart';
 import '../utils/utils.dart' as utils;
-
-const _DEFAULT_PAR = 3;
-const _DEFAULT_HOLES = 18;
-const _MAX_HOLES = 36;
+import '../widgets/new_match/new_course_card.dart';
 
 class NewMatchScreen extends StatefulWidget {
   const NewMatchScreen({Key? key}) : super(key: key);
@@ -21,11 +18,9 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
   final _formKey = GlobalKey<FormState>();
   String? _selectedValue;
   late DateTime _selectedDateTime;
-  late TextEditingController _nameController;
-  late TextEditingController _holeController;
-  late FocusNode _focusNode;
-  List<int> _holes = List.generate(_MAX_HOLES, (index) => _DEFAULT_PAR);
   var _isLoading = false;
+  String? _newCourseName;
+  List<int>? _newCoursePars;
 
   @override
   void initState() {
@@ -40,11 +35,6 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
       now.hour,
       now.minute,
     );
-
-    _focusNode = FocusNode();
-
-    _nameController = TextEditingController();
-    _holeController = TextEditingController(text: _DEFAULT_HOLES.toString());
   }
 
   @override
@@ -119,124 +109,15 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
                       ],
                     ),
                     if (_selectedValue == 'new-course') ...[
-                      Card(
-                        child: Container(
-                          padding: EdgeInsets.all(16),
-                          width: double.infinity,
-                          child: Column(
-                            children: [
-                              TextFormField(
-                                controller: _nameController,
-                                focusNode: _focusNode,
-                                autovalidateMode:
-                                    AutovalidateMode.onUserInteraction,
-                                validator: (value) {
-                                  if (value == null)
-                                    return 'Course Name cannot be null (how\'d that happen?)';
-                                  if (value.isEmpty)
-                                    return 'Course Name cannot be empty';
-                                },
-                                decoration: InputDecoration(
-                                  labelText: 'Course Name',
-                                ),
-                              ),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Expanded(
-                                    child: TextField(
-                                      enabled: false,
-                                      controller: _holeController,
-                                      decoration: InputDecoration(
-                                          labelText: 'Number of Holes'),
-                                    ),
-                                  ),
-                                  IconButton(
-                                    onPressed: () {
-                                      _changeFocus();
-                                      var value =
-                                          int.tryParse(_holeController.text);
-
-                                      if (value != null && value > 1) {
-                                        value--;
-                                        setState(() {
-                                          _holeController.text =
-                                              value.toString();
-                                        });
-                                      }
-                                    },
-                                    icon: Icon(Icons.remove),
-                                  ),
-                                  IconButton(
-                                    onPressed: () {
-                                      _changeFocus();
-                                      var value =
-                                          int.tryParse(_holeController.text);
-
-                                      if (value != null && value < _MAX_HOLES) {
-                                        value++;
-                                        setState(() {
-                                          _holeController.text =
-                                              value.toString();
-                                        });
-                                      }
-                                    },
-                                    icon: Icon(Icons.add),
-                                  ),
-                                ],
-                              ),
-                              box8,
-                              SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  children: List.generate(
-                                    int.parse(_holeController.text),
-                                    (index) => Card(
-                                      color: Colors.amberAccent,
-                                      child: Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                            8, 16, 8, 0),
-                                        child: Column(
-                                          children: [
-                                            Text(
-                                              'Hole ${index + 1}',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .headline6,
-                                            ),
-                                            IconButton(
-                                                onPressed: () {
-                                                  _changeFocus();
-                                                  if (_holes[index] < 10) {
-                                                    setState(() {
-                                                      _holes[index]++;
-                                                    });
-                                                  }
-                                                },
-                                                icon: Icon(Icons.add)),
-                                            Text('PAR'),
-                                            Text(_holes[index].toString()),
-                                            IconButton(
-                                                onPressed: () {
-                                                  _changeFocus();
-                                                  if (_holes[index] > 1) {
-                                                    setState(() {
-                                                      _holes[index]--;
-                                                    });
-                                                  }
-                                                },
-                                                icon: Icon(Icons.remove)),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
-                      )
+                      box16,
+                      NewCourseCard(
+                        onNameFieldSaved: (newName) {
+                          _newCourseName = newName;
+                        },
+                        onParsFieldSaved: (newPars) {
+                          _newCoursePars = newPars;
+                        },
+                      ),
                     ],
                     box16,
                     Row(
@@ -248,7 +129,6 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
                         box8,
                         GestureDetector(
                           onTap: () async {
-                            _changeFocus();
                             final result = await showDatePicker(
                               context: context,
                               initialDate: _selectedDateTime,
@@ -276,7 +156,6 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
                         box8,
                         GestureDetector(
                           onTap: () async {
-                            _changeFocus();
                             final result = await showTimePicker(
                                 context: context,
                                 initialTime:
@@ -329,22 +208,30 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
   }
 
   void _submit(Iterable<Course> courseIterable) {
-    _focusNode.unfocus();
-
+    print('debug');
     if (!_formKey.currentState!.validate()) {
       return;
     }
+    _formKey.currentState!.save();
 
     setState(() {
       _isLoading = true;
     });
 
     final Course course;
-    // New match with new course.
+
+    // New match with new course
     if (_selectedValue == 'new-course') {
-      final name = _nameController.text;
-      final pars = _holes.getRange(0, int.parse(_holeController.text)).toList();
-      final tempCourse = Course('<placeholder>', name, pars);
+      // There shouldn't be a valid path for either of these to be null, but
+      // check just in case
+      if (_newCourseName == null || _newCoursePars == null) {
+        print('Error: _newCourseName and _newCoursePars must not be null');
+        return;
+      }
+
+      final tempCourse =
+          Course('<placeholder>', _newCourseName!, _newCoursePars!);
+
       // Update course to get correct id
       course = FirebaseHelper.createCourse(tempCourse).item1;
     }
@@ -383,20 +270,5 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
         _isLoading = false;
       });
     });
-  }
-
-  void _changeFocus() {
-    if (_focusNode.hasFocus) {
-      _formKey.currentState?.validate();
-      _focusNode.unfocus();
-    }
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    _nameController.dispose();
-    _holeController.dispose();
-    _focusNode.dispose();
   }
 }
