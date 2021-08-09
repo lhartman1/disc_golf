@@ -75,28 +75,45 @@ class ParsFormField extends FormField<List<int>> {
                                   'Hole ${index + 1}',
                                   style: Theme.of(state.context)
                                       .textTheme
-                                      .headline6,
+                                      .headline6
+                                      ?.copyWith(
+                                        // Explicitly make this black otherwise
+                                        // Dark theme makes it white
+                                        color: Colors.black,
+                                      ),
                                 ),
                                 IconButton(
-                                    onPressed: () {
-                                      // Increase PAR for this hole
-                                      if (holes[index] < _MAX_PAR) {
-                                        holes[index]++;
-                                        state.didChange(holes);
-                                      }
-                                    },
-                                    icon: Icon(Icons.add)),
-                                Text('PAR'),
-                                Text(holes[index].toString()),
+                                  onPressed: () {
+                                    // Increase PAR for this hole
+                                    if (holes[index] < _MAX_PAR) {
+                                      holes[index]++;
+                                      state.didChange(holes);
+                                    }
+                                  },
+                                  icon: Icon(Icons.add),
+                                  color: Colors.black,
+                                ),
+                                Text(
+                                  'PAR\n${holes[index]}',
+                                  textAlign: TextAlign.center,
+                                  style: Theme.of(state.context)
+                                      .textTheme
+                                      .bodyText2
+                                      ?.copyWith(
+                                        color: Colors.black,
+                                      ),
+                                ),
                                 IconButton(
-                                    onPressed: () {
-                                      // Decrease PAR for this hole
-                                      if (holes[index] > _MIN_PAR) {
-                                        holes[index]--;
-                                        state.didChange(holes);
-                                      }
-                                    },
-                                    icon: Icon(Icons.remove)),
+                                  onPressed: () {
+                                    // Decrease PAR for this hole
+                                    if (holes[index] > _MIN_PAR) {
+                                      holes[index]--;
+                                      state.didChange(holes);
+                                    }
+                                  },
+                                  icon: Icon(Icons.remove),
+                                  color: Colors.black,
+                                ),
                               ],
                             ),
                           ),
