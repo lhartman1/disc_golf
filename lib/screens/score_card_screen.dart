@@ -314,10 +314,14 @@ class ScoreCardScreen extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       backgroundColor: Colors.white,
       builder: (context) {
+        // Center the FractionallySizedBox, but also center it's content
         return Center(
           child: FractionallySizedBox(
-            child: QrImage(data: matchId),
+            child: Center(
+              child: QrImage(data: matchId),
+            ),
             widthFactor: 0.5,
+            heightFactor: 0.5,
           ),
         );
       },
