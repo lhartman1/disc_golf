@@ -133,7 +133,7 @@ class HomePage extends StatelessWidget {
         children: [
           SpeedDialChild(
             child: Icon(Icons.qr_code_2),
-            label: 'Join game by QR code',
+            label: 'Join match by QR code',
             labelStyle: TextStyle(fontSize: 18.0),
             onTap: () {
               Navigator.of(context).push(MaterialPageRoute(
@@ -178,6 +178,19 @@ class HomePage extends StatelessWidget {
           final gamesData = snapshot.data?.docs;
 
           if (snapshot.hasData && gamesData != null) {
+            if (gamesData.length == 0) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Text(
+                    'You don\'t have any matches yet, click the "+" button below to start or join one.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headline5,
+                  ),
+                ),
+              );
+            }
+
             // Build matches ListView
             return ListView.builder(
               itemCount: gamesData.length,
