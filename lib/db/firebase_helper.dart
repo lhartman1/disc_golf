@@ -207,6 +207,27 @@ abstract class FirebaseHelper {
     });
   }
 
+  static Stream<List<Match>> getAllMatches() {
+    return FirebaseFirestore.instance
+        .collection('matches')
+        .where(
+          'players',
+          arrayContains: FirebaseHelper.getUserId() ?? '<unknown>',
+        )
+        .orderBy(
+          'datetime',
+          descending: true,
+        )
+        .snapshots()
+        .map((event) {
+      return event.docs.map((e) {
+        final matchData = e.data();
+        matchData['id'] = e.id;
+        return Match.fromJson(matchData);
+      }).toList();
+    });
+  }
+
   static Stream<Iterable<UserStrokes>> getUserStrokesForMatch(String matchId) {
     final query = FirebaseFirestore.instance
         .collection('matches')

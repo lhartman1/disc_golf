@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -87,18 +86,6 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final games = FirebaseFirestore.instance
-        .collection('matches')
-        .where(
-          'players',
-          arrayContains: FirebaseHelper.getUserId() ?? '<unknown>',
-        )
-        .orderBy(
-          'datetime',
-          descending: true,
-        )
-        .snapshots();
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Matches'),
@@ -167,87 +154,86 @@ class HomePage extends StatelessWidget {
           ),
         ],
       ),
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: games,
+      body: StreamBuilder<List<Match>>(
+        stream: FirebaseHelper.getAllMatches(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
               child: CircularProgressIndicator(),
             );
           }
-          final gamesData = snapshot.data?.docs;
 
-          if (snapshot.hasData && gamesData != null) {
-            if (gamesData.length == 0) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Text(
-                    'You don\'t have any matches yet, click the "+" button below to start or join one.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headline5,
+          final matches = snapshot.data;
+          if (matches == null) {
+            return Center(child: Text(':('));
+          }
+
+          if (matches.length == 0) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Text(
+                  'You don\'t have any matches yet, click the "+" button below to start or join one.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headline5,
+                ),
+              ),
+            );
+          }
+
+          // Build matches ListView
+          return ListView.builder(
+            itemCount: matches.length,
+            itemBuilder: (context, index) {
+              final match = matches[index];
+
+              var clickPos = RelativeRect.fill;
+              return GestureDetector(
+                onLongPressStart: (details) {
+                  // Store the touch position when a long press is started.
+                  clickPos = RelativeRect.fromLTRB(
+                    details.globalPosition.dx,
+                    details.globalPosition.dy,
+                    details.globalPosition.dx,
+                    details.globalPosition.dy,
+                  );
+                },
+                onLongPress: () {
+                  // Offer delete option for long pressing match
+                  showMenu(context: context, position: clickPos, items: [
+                    PopupMenuItem(
+                      child: ListTile(
+                        leading: Icon(Icons.delete),
+                        title: Text('Remove'),
+                        onTap: () {
+                          FirebaseHelper.removeUserFromMatch(
+                              FirebaseHelper.getUserId() ?? '<unknown>',
+                              match.id);
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ),
+                  ]);
+                },
+                onTap: () {
+                  // Go to ScoreCard
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (context) {
+                      return ScoreCardScreen(match);
+                    },
+                  ));
+                },
+                child: Card(
+                  child: ListTile(
+                    title: Text(match.course.name),
+                    subtitle:
+                        Text(utils.dateTimeFormatter.format(match.datetime)),
                   ),
                 ),
               );
-            }
-
-            // Build matches ListView
-            return ListView.builder(
-              itemCount: gamesData.length,
-              itemBuilder: (context, index) {
-                final matchData = gamesData[index].data();
-                matchData['id'] = gamesData[index].id;
-                final match = Match.fromJson(matchData);
-
-                var clickPos = RelativeRect.fill;
-                return GestureDetector(
-                  onLongPressStart: (details) {
-                    // Store the touch position when a long press is started.
-                    clickPos = RelativeRect.fromLTRB(
-                      details.globalPosition.dx,
-                      details.globalPosition.dy,
-                      details.globalPosition.dx,
-                      details.globalPosition.dy,
-                    );
-                  },
-                  onLongPress: () {
-                    // Offer delete option for long pressing match
-                    showMenu(context: context, position: clickPos, items: [
-                      PopupMenuItem(
-                        child: ListTile(
-                          leading: Icon(Icons.delete),
-                          title: Text('Remove'),
-                          onTap: () {
-                            FirebaseHelper.removeUserFromMatch(
-                                FirebaseHelper.getUserId() ?? '<unknown>',
-                                match.id);
-                            Navigator.of(context).pop();
-                          },
-                        ),
-                      ),
-                    ]);
-                  },
-                  onTap: () {
-                    // Go to ScoreCard
-                    Navigator.push(context, MaterialPageRoute(
-                      builder: (context) {
-                        return ScoreCardScreen(match);
-                      },
-                    ));
-                  },
-                  child: Card(
-                    child: ListTile(
-                      title: Text(match.course.name),
-                      subtitle:
-                          Text(utils.dateTimeFormatter.format(match.datetime)),
-                    ),
-                  ),
-                );
-              },
-              padding: EdgeInsets.all(4),
-            );
-          }
-          return Text('snapshot doesn\'t have data :(');
+            },
+            padding: EdgeInsets.all(4),
+          );
         },
       ),
     );
