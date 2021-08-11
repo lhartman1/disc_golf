@@ -80,6 +80,17 @@ class _AuthFormState extends State<AuthForm> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      'Disc Golf Mando Scorecard',
+                      style: Theme.of(context).textTheme.headline4?.copyWith(
+                            // This has a good color for both light and dark themes
+                            color: Theme.of(context).textTheme.bodyText1?.color,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                   if (!_isLogin) UserImagePicker(_pickedImage),
                   TextFormField(
                     key: ValueKey('email'),
