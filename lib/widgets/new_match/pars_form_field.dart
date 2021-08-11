@@ -60,61 +60,83 @@ class ParsFormField extends FormField<List<int>> {
                     ],
                   ),
                   const SizedBox(width: 8, height: 8),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: List.generate(
-                        state.value?.length ?? 0,
-                        (index) => Card(
-                          color: Colors.amberAccent,
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(8, 16, 8, 0),
-                            child: Column(
-                              children: [
-                                Text(
-                                  'Hole ${index + 1}',
-                                  style: Theme.of(state.context)
-                                      .textTheme
-                                      .headline6
-                                      ?.copyWith(
-                                        // Explicitly make this black otherwise
-                                        // Dark theme makes it white
-                                        color: Colors.black,
-                                      ),
-                                ),
-                                IconButton(
-                                  onPressed: () {
-                                    // Increase PAR for this hole
-                                    if (holes[index] < _MAX_PAR) {
-                                      holes[index]++;
-                                      state.didChange(holes);
-                                    }
-                                  },
-                                  icon: Icon(Icons.add),
-                                  color: Colors.black,
-                                ),
-                                Text(
-                                  'PAR\n${holes[index]}',
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(state.context)
-                                      .textTheme
-                                      .bodyText2
-                                      ?.copyWith(
-                                        color: Colors.black,
-                                      ),
-                                ),
-                                IconButton(
-                                  onPressed: () {
-                                    // Decrease PAR for this hole
-                                    if (holes[index] > _MIN_PAR) {
-                                      holes[index]--;
-                                      state.didChange(holes);
-                                    }
-                                  },
-                                  icon: Icon(Icons.remove),
-                                  color: Colors.black,
-                                ),
-                              ],
+                  ShaderMask(
+                    shaderCallback: (Rect rect) {
+                      return LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          if (state.blurStart) Colors.white,
+                          Colors.transparent,
+                          Colors.transparent,
+                          if (state.blurEnd) Colors.white
+                        ],
+                        stops: [
+                          if (state.blurStart) 0.0,
+                          0.1,
+                          0.9,
+                          if (state.blurEnd) 1.0,
+                        ],
+                      ).createShader(rect);
+                    },
+                    blendMode: BlendMode.dstOut,
+                    child: SingleChildScrollView(
+                      controller: state._scrollController,
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: List.generate(
+                          state.value?.length ?? 0,
+                          (index) => Card(
+                            color: Colors.amberAccent,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(8, 16, 8, 0),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    'Hole ${index + 1}',
+                                    style: Theme.of(state.context)
+                                        .textTheme
+                                        .headline6
+                                        ?.copyWith(
+                                          // Explicitly make this black
+                                          // otherwise Dark theme makes it white
+                                          color: Colors.black,
+                                        ),
+                                  ),
+                                  IconButton(
+                                    onPressed: () {
+                                      // Increase PAR for this hole
+                                      if (holes[index] < _MAX_PAR) {
+                                        holes[index]++;
+                                        state.didChange(holes);
+                                      }
+                                    },
+                                    icon: Icon(Icons.add),
+                                    color: Colors.black,
+                                  ),
+                                  Text(
+                                    'PAR\n${holes[index]}',
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(state.context)
+                                        .textTheme
+                                        .bodyText2
+                                        ?.copyWith(
+                                          color: Colors.black,
+                                        ),
+                                  ),
+                                  IconButton(
+                                    onPressed: () {
+                                      // Decrease PAR for this hole
+                                      if (holes[index] > _MIN_PAR) {
+                                        holes[index]--;
+                                        state.didChange(holes);
+                                      }
+                                    },
+                                    icon: Icon(Icons.remove),
+                                    color: Colors.black,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -128,11 +150,36 @@ class ParsFormField extends FormField<List<int>> {
 
 class _ParsFormFieldState extends FormFieldState<List<int>> {
   late final TextEditingController _holeController;
+  late final ScrollController _scrollController;
+  var blurStart = false;
+  var blurEnd = true;
 
   @override
   void initState() {
     super.initState();
     _holeController = TextEditingController(text: value?.length.toString());
+    _scrollController = ScrollController();
+    _scrollController.addListener(_scrollListener);
+  }
+
+  void _scrollListener() {
+    final pos = _scrollController.position;
+
+    // Blur start if the scroll position isn't at the beginning
+    final shouldBlurStart = pos.extentBefore != 0.0;
+    if (blurStart != shouldBlurStart) {
+      setState(() {
+        blurStart = shouldBlurStart;
+      });
+    }
+
+    // Blur end if the scroll position isn't at the end
+    final shouldBlurEnd = pos.extentAfter != 0.0;
+    if (blurEnd != shouldBlurEnd) {
+      setState(() {
+        blurEnd = shouldBlurEnd;
+      });
+    }
   }
 
   @override
@@ -147,6 +194,7 @@ class _ParsFormFieldState extends FormFieldState<List<int>> {
   @override
   void dispose() {
     _holeController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 }
