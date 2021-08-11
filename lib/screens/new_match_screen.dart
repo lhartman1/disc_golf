@@ -96,7 +96,6 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
                               ),
                               ...existingCourses.map(
                                 (e) {
-                                  print(e.name);
                                   return DropdownMenuItem(
                                     child: Text(e.name),
                                     value: e.id,
@@ -208,7 +207,6 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
   }
 
   void _submit(Iterable<Course> courseIterable) {
-    print('debug');
     if (!_formKey.currentState!.validate()) {
       return;
     }
