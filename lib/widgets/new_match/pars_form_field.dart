@@ -159,10 +159,20 @@ class _ParsFormFieldState extends FormFieldState<List<int>> {
     super.initState();
     _holeController = TextEditingController(text: value?.length.toString());
     _scrollController = ScrollController();
-    _scrollController.addListener(_scrollListener);
+    _scrollController.addListener(_checkScrollControllerForBlur);
   }
 
-  void _scrollListener() {
+  @override
+  Widget build(BuildContext context) {
+    // Check scroll controller after the widget is built. Checking afterwards is
+    // important for getting the correct scroll extents.
+    WidgetsBinding.instance?.addPostFrameCallback((_) {
+      _checkScrollControllerForBlur();
+    });
+    return super.build(context);
+  }
+
+  void _checkScrollControllerForBlur() {
     final pos = _scrollController.position;
 
     // Blur start if the scroll position isn't at the beginning
