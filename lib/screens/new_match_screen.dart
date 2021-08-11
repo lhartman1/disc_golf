@@ -14,9 +14,10 @@ class NewMatchScreen extends StatefulWidget {
   _NewMatchScreenState createState() => _NewMatchScreenState();
 }
 
-class _NewMatchScreenState extends State<NewMatchScreen> {
+class _NewMatchScreenState extends State<NewMatchScreen>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  String? _selectedValue;
+  final _selectedCourseNotifier = ValueNotifier<String?>(null);
   late DateTime _selectedDateTime;
   var _isLoading = false;
   String? _newCourseName;
@@ -78,11 +79,9 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
                               if (value == null) return 'Select a course';
                             },
                             onChanged: (value) async {
-                              setState(() {
-                                _selectedValue = value as String;
-                              });
+                              _selectedCourseNotifier.value = value as String;
                             },
-                            value: _selectedValue,
+                            value: _selectedCourseNotifier.value,
                             items: [
                               DropdownMenuItem(
                                 child: Row(
@@ -107,17 +106,30 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
                         ),
                       ],
                     ),
-                    if (_selectedValue == 'new-course') ...[
-                      box16,
-                      NewCourseCard(
-                        onNameFieldSaved: (newName) {
-                          _newCourseName = newName;
-                        },
-                        onParsFieldSaved: (newPars) {
-                          _newCoursePars = newPars;
-                        },
+                    ValueListenableBuilder(
+                      valueListenable: _selectedCourseNotifier,
+                      builder: (context, value, child) {
+                        return AnimatedSize(
+                          duration: Duration(milliseconds: 500),
+                          vsync: this,
+                          curve: Curves.easeInOut,
+                          child: value == 'new-course' ? child : Container(),
+                        );
+                      },
+                      child: Column(
+                        children: [
+                          box16,
+                          NewCourseCard(
+                            onNameFieldSaved: (newName) {
+                              _newCourseName = newName;
+                            },
+                            onParsFieldSaved: (newPars) {
+                              _newCoursePars = newPars;
+                            },
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                     box16,
                     Row(
                       children: [
@@ -217,9 +229,10 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
     });
 
     final Course course;
+    final selectedCourseId = _selectedCourseNotifier.value;
 
     // New match with new course
-    if (_selectedValue == 'new-course') {
+    if (selectedCourseId == 'new-course') {
       // There shouldn't be a valid path for either of these to be null, but
       // check just in case
       if (_newCourseName == null || _newCoursePars == null) {
@@ -236,9 +249,9 @@ class _NewMatchScreenState extends State<NewMatchScreen> {
     // New match with existing course
     else {
       final tempCourse = courseIterable
-          .firstWhereOrNull((element) => element.id == _selectedValue);
+          .firstWhereOrNull((element) => element.id == selectedCourseId);
       if (tempCourse == null) {
-        print('Could not find course with id "$_selectedValue"');
+        print('Could not find course with id "$selectedCourseId"');
         return;
       }
       course = tempCourse;
