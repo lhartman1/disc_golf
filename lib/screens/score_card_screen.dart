@@ -314,15 +314,20 @@ class ScoreCardScreen extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       backgroundColor: Colors.white,
       builder: (context) {
-        // Center the FractionallySizedBox, but also center it's content
-        return Center(
-          child: FractionallySizedBox(
-            child: Center(
+        final size = MediaQuery.of(context).size;
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                // BottomSheet is 1/2 of screen height, so use 1/2 of that
+                maxHeight: size.height / 4,
+                maxWidth: size.width / 2,
+              ),
               child: QrImage(data: matchId),
             ),
-            widthFactor: 0.5,
-            heightFactor: 0.5,
-          ),
+            Text(matchId),
+          ],
         );
       },
     );
