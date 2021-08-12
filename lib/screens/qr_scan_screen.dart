@@ -36,22 +36,28 @@ class _QRScanScreenState extends State<QRScanScreen> {
         children: [
           _buildQrView(context),
           if (result != null)
-            // TODO: make this better with loading indicator or something
             FractionallySizedBox(
-              // alignment: Alignment.center,
               heightFactor: 0.4,
-              widthFactor: 1,
               child: Center(
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Text(
-                        result?.code ?? 'Unknown',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.headline6,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Text(
+                              'Joining: ${result!.code}',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.headline6,
+                            ),
+                          ),
+                          LinearProgressIndicator(),
+                        ],
                       ),
                     ),
                   ),
