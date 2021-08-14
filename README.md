@@ -4,6 +4,8 @@ This is a Flutter app for keeping score of a Disc Golf (or regular Golf) match. 
 
 This project also uses Firebase Authentication for user accounts and Firebase Cloud Storage for storing user account images.
 
+To try out the web app, go to [disc-golf-4651d.web.app](https://disc-golf-4651d.web.app/).
+
 ## Demo
 
 https://user-images.githubusercontent.com/4906016/129418146-a14e3aa6-ea8d-404e-8757-2bb616bcab71.mp4
