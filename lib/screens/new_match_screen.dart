@@ -22,6 +22,7 @@ class _NewMatchScreenState extends State<NewMatchScreen>
   var _isLoading = false;
   String? _newCourseName;
   List<int>? _newCoursePars;
+  late final Stream<Iterable<Course>> _courseStream;
 
   @override
   void initState() {
@@ -36,6 +37,8 @@ class _NewMatchScreenState extends State<NewMatchScreen>
       now.hour,
       now.minute,
     );
+
+    _courseStream = FirebaseHelper.getCourses();
   }
 
   @override
@@ -53,7 +56,7 @@ class _NewMatchScreenState extends State<NewMatchScreen>
           child: Form(
             key: _formKey,
             child: StreamBuilder<Iterable<Course>>(
-              stream: FirebaseHelper.getCourses(),
+              stream: _courseStream,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());
