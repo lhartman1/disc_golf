@@ -51,11 +51,22 @@ class ScoreCardScreen extends StatelessWidget {
                             userStrokesList.length,
                             (index) {
                               final user = userStrokesList[index].user;
+
+                              final isOfflinePlayer =
+                                  user.id.startsWith('offlinePlayer:');
+
                               return DataColumn(
-                                label: Expanded(
+                                label: TextButton(
+                                  onPressed: null,
+                                  onLongPress: isOfflinePlayer
+                                      ? () => _showRemoveOfflinePlayerDialog(
+                                          context, user)
+                                      : null,
                                   child: Text(
                                     user.username,
                                     textAlign: TextAlign.center,
+                                    style:
+                                        Theme.of(context).textTheme.bodyText1,
                                   ),
                                 ),
                               );
@@ -300,6 +311,32 @@ class ScoreCardScreen extends StatelessWidget {
               ],
             );
           },
+        );
+      },
+    );
+  }
+
+  Future _showRemoveOfflinePlayerDialog(BuildContext context, User user) {
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Remove "${user.username}"?'),
+          content: Text(
+              'This will remove player "${user.username}" from this game.'),
+          actions: [
+            TextButton(
+              onPressed: Navigator.of(context).pop,
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                FirebaseHelper.removeUserFromMatch(user.id, _match.id);
+                Navigator.of(context).pop();
+              },
+              child: Text('Ok'),
+            ),
+          ],
         );
       },
     );
