@@ -52,13 +52,10 @@ class ScoreCardScreen extends StatelessWidget {
                             (index) {
                               final user = userStrokesList[index].user;
 
-                              final isOfflinePlayer =
-                                  user.id.startsWith('offlinePlayer:');
-
                               return DataColumn(
                                 label: TextButton(
                                   onPressed: null,
-                                  onLongPress: isOfflinePlayer
+                                  onLongPress: user.isOfflinePlayer()
                                       ? () => _showRemoveOfflinePlayerDialog(
                                           context, user)
                                       : null,
@@ -205,7 +202,7 @@ class ScoreCardScreen extends StatelessWidget {
               final name = await _showOfflinePlayerDialog(context);
               if (name == null) return;
               final user = User(
-                  id: 'offlinePlayer:$name',
+                  id: OFFLINE_PREFIX + name,
                   email: null,
                   imageUri: null,
                   username: name);

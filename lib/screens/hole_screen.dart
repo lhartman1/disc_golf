@@ -112,13 +112,12 @@ class HoleScreen extends StatelessWidget {
   ) {
     final playerHoleScores = userStrokesIterable.map((e) {
       final isMe = FirebaseHelper.getUserId() == e.user.id;
-      final offlinePlayer = e.user.id.startsWith('offlinePlayer:');
 
       return PlayerHoleScore(
         match: match,
         userStrokes: e,
         holeIndex: index,
-        editable: isMe || offlinePlayer,
+        editable: isMe || e.user.isOfflinePlayer(),
       );
     }).toList();
 
