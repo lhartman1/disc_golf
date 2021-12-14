@@ -30,14 +30,20 @@ class _PlayerHoleScoreState extends State<PlayerHoleScore> {
 
   List<int> get strokes => widget.userStrokes.strokes;
 
+  int get holeStrokes => strokes[holeIndex];
+
+  set holeStrokes(int newValue) => strokes[holeIndex] = newValue;
+
   List<int> get pars => widget.match.course.pars;
+
+  int get par => pars[holeIndex];
 
   @override
   void didUpdateWidget(covariant PlayerHoleScore oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     final oldHoleStrokes = oldWidget.userStrokes.strokes[oldWidget.holeIndex];
-    final newHoleStrokes = strokes[widget.holeIndex];
+    final newHoleStrokes = strokes[holeIndex];
 
     // FIXME: this is not showing orange text for offline players
     if (!widget.editable && oldHoleStrokes != newHoleStrokes) {
@@ -52,7 +58,6 @@ class _PlayerHoleScoreState extends State<PlayerHoleScore> {
 
   @override
   Widget build(BuildContext context) {
-    final holeStrokes = strokes[holeIndex];
     final imageUri = widget.userStrokes.user.imageUri;
 
     return Card(
@@ -67,14 +72,21 @@ class _PlayerHoleScoreState extends State<PlayerHoleScore> {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Button to decrement score
             IconButton(
-              onPressed: widget.editable && holeStrokes > 0
+              onPressed: widget.editable// && holeStrokes > 0
                   ? () {
                       // Guard against scores less than 0 in case somehow this
                       // widget didn't get rebuilt with onPressed blocking this
-                      if (strokes[holeIndex] <= 0) return;
+                      if (holeStrokes < 0) return;
 
-                      strokes[holeIndex]--;
+                      // Set to (par - 1) if the score is 0, otherwise decrement.
+                      if (holeStrokes == 0) {
+                        holeStrokes = pars[holeIndex] - 1;
+                      } else {
+                        holeStrokes--;
+                      }
+
                       FirebaseHelper.updateScore(
                           widget.userStrokes.user.id, strokes, widget.match.id);
                     }
@@ -94,14 +106,15 @@ class _PlayerHoleScoreState extends State<PlayerHoleScore> {
               duration:
                   orangeText ? Duration.zero : Duration(milliseconds: 500),
             ),
+            // Button to increment score
             IconButton(
               onPressed: widget.editable
                   ? () {
                       // Set to par if the score is 0, otherwise increment.
-                      if (strokes[holeIndex] == 0) {
-                        strokes[holeIndex] = pars[holeIndex];
+                      if (holeStrokes == 0) {
+                        holeStrokes = pars[holeIndex];
                       } else {
-                        strokes[holeIndex]++;
+                        holeStrokes++;
                       }
 
                       FirebaseHelper.updateScore(
