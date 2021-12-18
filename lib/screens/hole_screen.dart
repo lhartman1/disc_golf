@@ -97,7 +97,7 @@ class _HoleScreenState extends State<HoleScreen> {
         title: Text(_match.course.name),
         actions: [
           if (_page == 0)
-            TextButton(
+            IconButton(
               onPressed: () async {
                 _isSettingOrder = !_isSettingOrder;
 
@@ -114,10 +114,8 @@ class _HoleScreenState extends State<HoleScreen> {
 
                 setState(() {});
               },
-              child: Text(_isSettingOrder ? 'Save' : 'Set Order'),
-              style: TextButton.styleFrom(
-                primary: Colors.white,
-              ),
+              tooltip: _isSettingOrder ? 'Save starting order' : 'Set starting order',
+              icon: Icon(_isSettingOrder ? Icons.save : Icons.low_priority),
             ),
         ],
       ),
