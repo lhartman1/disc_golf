@@ -208,13 +208,15 @@ class _HoleScreenState extends State<HoleScreen> {
     final playerHoleScores = userStrokesIterable.map((e) {
       final isMe = FirebaseHelper.getUserId() == e.user.id;
       final order = displayOrder.indexOf(e.user.id);
+      // TODO: make a way to grant/deny others to edit your score.
+      final editable = true;  // Old way: isMe || e.user.isOfflinePlayer();
 
       return PlayerHoleScore(
         key: ValueKey(e.user),
         match: match,
         userStrokes: e,
         holeIndex: index,
-        editable: isMe || e.user.isOfflinePlayer(),
+        editable: editable,
         settingOrder: _isSettingOrder,
         order: orderList == null ? null : order,
       );
