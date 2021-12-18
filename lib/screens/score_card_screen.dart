@@ -315,6 +315,7 @@ class _ScoreCardScreenState extends State<ScoreCardScreen> {
                               ),
                               Wrap(
                                 spacing: 12,
+                                runSpacing: 6,
                                 children: users.take(6).map((user) {
                                   return InputChip(
                                     label: Text(user.username),
