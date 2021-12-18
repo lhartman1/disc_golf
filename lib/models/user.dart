@@ -1,27 +1,24 @@
-import 'package:json_annotation/json_annotation.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:flutter/foundation.dart';
 
+part 'user.freezed.dart';
 part 'user.g.dart';
 
 const OFFLINE_PREFIX = 'offlinePlayer:';
 
-@JsonSerializable()
-class User {
-  const User({
-    required this.id,
-    required this.email,
-    required this.imageUri,
-    required this.username,
-  });
+@freezed
+class User with _$User {
+  const User._();
 
-  final String id;
-  final String? email;
-  @JsonKey(name: 'image_url')
-  final Uri? imageUri;
-  final String username;
+  factory User({
+    required String id,
+    required String? email,
+    @JsonKey(name: 'image_url')
+    required Uri? imageUri,
+    required String username,
+  }) = _User;
 
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
-
-  Map<String, dynamic> toJson() => _$UserToJson(this);
 
   bool isOfflinePlayer() => id.startsWith(OFFLINE_PREFIX);
 }
