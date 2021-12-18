@@ -124,6 +124,16 @@ abstract class FirebaseHelper {
     return true;
   }
 
+  static Future updateStartingOrder(Match match) async {
+    // Update the course in the current match.
+    final matchUpdateFuture =
+    FirebaseFirestore.instance.collection('matches').doc(match.id).update({
+      'players': match.players,
+    });
+
+    return matchUpdateFuture;
+  }
+
   /// This function updates for pars for a match and all copies of that course
   /// for each user.
   static Future syncParsForMatch(Match match) async {
@@ -240,6 +250,7 @@ abstract class FirebaseHelper {
         return UserStrokes.fromJson(e.data());
       }).toList();
 
+      /*
       // Sort alphabetically
       userStrokes.sort((a, b) => a.user.username.compareTo(b.user.username));
 
@@ -250,6 +261,7 @@ abstract class FirebaseHelper {
         final me = userStrokes.removeAt(indexOfMe);
         userStrokes.insert(0, me);
       }
+      // */
 
       return userStrokes;
     });

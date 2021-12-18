@@ -9,6 +9,8 @@ class PlayerHoleScore extends StatefulWidget {
   final UserStrokes userStrokes;
   final int holeIndex;
   final bool editable;
+  final bool settingOrder;
+  final int? order;
 
   const PlayerHoleScore({
     Key? key,
@@ -16,6 +18,8 @@ class PlayerHoleScore extends StatefulWidget {
     required this.userStrokes,
     required this.holeIndex,
     required this.editable,
+    this.settingOrder = false,
+    this.order,
   }) : super(key: key);
 
   @override
@@ -62,11 +66,7 @@ class _PlayerHoleScoreState extends State<PlayerHoleScore> {
 
     return Card(
       child: ListTile(
-        leading: CircleAvatar(
-          child: imageUri == null ? Icon(Icons.person) : null,
-          backgroundImage:
-              imageUri == null ? null : NetworkImage(imageUri.toString()),
-        ),
+        leading: _getLeading(imageUri),
         title: Text(widget.userStrokes.user.username),
         subtitle: Text(widget.userStrokes.getScoreSummary(widget.match)),
         trailing: Row(
@@ -74,7 +74,7 @@ class _PlayerHoleScoreState extends State<PlayerHoleScore> {
           children: [
             // Button to decrement score
             IconButton(
-              onPressed: widget.editable// && holeStrokes > 0
+              onPressed: widget.editable // && holeStrokes > 0
                   ? () {
                       // Guard against scores less than 0 in case somehow this
                       // widget didn't get rebuilt with onPressed blocking this
@@ -129,5 +129,67 @@ class _PlayerHoleScoreState extends State<PlayerHoleScore> {
         ),
       ),
     );
+  }
+
+  StatelessWidget _getLeading(Uri? imageUri) {
+    var order = widget.order;
+    if (order != null && widget.settingOrder) {
+      return ReorderableDragStartListener(
+        index: order,
+        child: CircleAvatar(
+          child: Icon(Icons.drag_handle),
+          backgroundColor: Colors.transparent,
+          foregroundColor: Theme.of(context).colorScheme.primary,
+        ),
+      );
+    }
+
+    if (order != null) {
+      // Increase order by 1 for display. I.e. for 1st instead of 0th.
+      order++;
+      final suffix = getNumberSuffix(order);
+
+      final textWidget = Text.rich(TextSpan(
+        children: <InlineSpan>[
+          TextSpan(text: order.toString()),
+          WidgetSpan(
+            alignment: PlaceholderAlignment.top,
+            child: Text(
+              suffix,
+              style: TextStyle(fontSize: 10),
+            ),
+          ),
+        ],
+      ));
+
+      return CircleAvatar(
+        child: textWidget,
+      );
+    }
+
+    return CircleAvatar(
+      child: imageUri == null ? Icon(Icons.person) : null,
+      backgroundImage:
+          imageUri == null ? null : NetworkImage(imageUri.toString()),
+    );
+  }
+
+  String getNumberSuffix(int num) {
+    num = num % 100;
+
+    if (num >= 11 && num <= 13) {
+      return 'th';
+    }
+
+    switch (num % 10) {
+      case 1:
+        return 'st';
+      case 2:
+        return 'nd';
+      case 3:
+        return 'rd';
+      default:
+        return 'th';
+    }
   }
 }

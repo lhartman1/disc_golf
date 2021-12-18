@@ -5,7 +5,7 @@ import '../models/match.dart';
 import '../models/user_strokes.dart';
 import '../widgets/hole/player_hole_score.dart';
 
-class HoleScreen extends StatelessWidget {
+class HoleScreen extends StatefulWidget {
   final Match _match;
   final int initialPage;
 
@@ -16,37 +16,74 @@ class HoleScreen extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<HoleScreen> createState() => _HoleScreenState();
+}
+
+class _HoleScreenState extends State<HoleScreen> {
+  late final Stream<Match> _matchStream;
+  late final Stream<Iterable<UserStrokes>> _userStrokesStream;
+  late int _page;
+  var _isSettingOrder = false;
+  late Match _match;
+  List<String>? _order;
+
+  @override
+  void initState() {
+    super.initState();
+    _matchStream = FirebaseHelper.getMatch(widget._match.id);
+    _userStrokesStream =
+        FirebaseHelper.getUserStrokesForMatch(widget._match.id);
+    _page = widget.initialPage;
+    _match = widget._match;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final controller = PageController(initialPage: initialPage);
+    final controller = PageController(initialPage: widget.initialPage);
     // Use this to get rid of last hole snackbar message
     controller.addListener(() {
       ScaffoldMessenger.of(context).clearSnackBars();
+
+      final newPage = controller.page?.round();
+      if (newPage != null && _page != newPage) {
+        print('newPage: $newPage');
+        setState(() {
+          // FIXME: doesn't work correctly. Maybe store page sorted?
+          _page = newPage;
+          _order = null;
+          // Turn off order setting on pages after the first one
+          if (_page > 0) {
+            _isSettingOrder = false;
+          }
+        });
+      }
     });
 
-    final body = PageView.builder(
-      scrollDirection: Axis.horizontal,
-      controller: controller,
-      itemCount: _match.course.numHoles,
-      itemBuilder: (BuildContext context, int index) {
-        return StreamBuilder<Match>(
-          stream: FirebaseHelper.getMatch(_match.id),
-          builder: (context, matchSnapshot) {
-            return StreamBuilder<Iterable<UserStrokes>>(
-              stream: FirebaseHelper.getUserStrokesForMatch(_match.id),
-              builder: (context, userStrokesSnapshot) {
-                if (matchSnapshot.connectionState == ConnectionState.waiting ||
-                    userStrokesSnapshot.connectionState ==
-                        ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                }
-                final match = matchSnapshot.data;
-                final userStrokesIterable = userStrokesSnapshot.data;
-                if (match == null || userStrokesIterable == null) {
-                  return Center(child: Text(':('));
-                }
+    final body = StreamBuilder<Match>(
+      stream: _matchStream,
+      builder: (context, matchSnapshot) {
+        return StreamBuilder<Iterable<UserStrokes>>(
+          stream: _userStrokesStream,
+          builder: (context, userStrokesSnapshot) {
+            if (matchSnapshot.connectionState == ConnectionState.waiting ||
+                userStrokesSnapshot.connectionState ==
+                    ConnectionState.waiting) {
+              return Center(child: CircularProgressIndicator());
+            }
+            final match = matchSnapshot.data;
+            final userStrokesIterable = userStrokesSnapshot.data;
+            if (match == null || userStrokesIterable == null) {
+              return Center(child: Text(':('));
+            }
+            _match = match;
 
+            return PageView.builder(
+              scrollDirection: Axis.horizontal,
+              controller: controller,
+              itemCount: _match.course.numHoles,
+              itemBuilder: (BuildContext context, int index) {
                 return _buildCustomScrollView(
-                    context, match, userStrokesIterable, index);
+                    context, _match, userStrokesIterable, index);
               },
             );
           },
@@ -58,6 +95,31 @@ class HoleScreen extends StatelessWidget {
       appBar: AppBar(
         elevation: 0,
         title: Text(_match.course.name),
+        actions: [
+          if (_page == 0)
+            TextButton(
+              onPressed: () async {
+                _isSettingOrder = !_isSettingOrder;
+
+                if (_isSettingOrder) {
+                  _order = List.from(_match.players);
+                }
+
+                if (!_isSettingOrder && _order != null) {
+                  _match = _match.copyWith(players: _order);
+                  _order = null;
+                  print('resetting _pageSorted');
+                  await FirebaseHelper.updateStartingOrder(_match);
+                }
+
+                setState(() {});
+              },
+              child: Text(_isSettingOrder ? 'Save' : 'Set Order'),
+              style: TextButton.styleFrom(
+                primary: Colors.white,
+              ),
+            ),
+        ],
       ),
       body: body,
       floatingActionButton: Row(
@@ -105,23 +167,79 @@ class HoleScreen extends StatelessWidget {
     );
   }
 
-  SliverList _buildPlayerHoleScores(
+  SliverReorderableList _buildPlayerHoleScores(
     Iterable<UserStrokes> userStrokesIterable,
     Match match,
     int index,
   ) {
+    final orderList = _getTeeOrder(index, userStrokesIterable.toList());
+
+    // The sortOrder should only be updated when the user navigates to a new
+    // page or when the order is set via the UI. This is to keep the players in
+    // place to prevent accidentally changing the score for the wrong player.
+    final List<String> sortOrder;
+
+    // This IF block is true when this function is executed for the active
+    // PageView instead of a PageView that is only partially scrolled into view.
+    // The active PageView should not reorder the users when scores on previous
+    // holes change.
+    if (index == _page) {
+      if (_order == null) {
+        _order = orderList ?? match.players;
+      }
+      sortOrder = _order!;
+    } else {
+      // This is executed when a PageView is partially scrolled into view.
+      // It should ignore any existing order until it is the active PageView.
+      sortOrder = orderList ?? match.players;
+    }
+
+    userStrokesIterable = userStrokesIterable.toList()
+      ..sort((a, b) {
+        final first = sortOrder.indexOf(a.user.id);
+        final second = sortOrder.indexOf(b.user.id);
+        return first.compareTo(second);
+      });
+
+    // This is the order number in the CircleAvatar and
+    // ReorderableDragStartListener in PlayerHoleScore. This should be
+    // up-to-date at all times, unlike sortOrder.
+    final displayOrder =
+        (_isSettingOrder ? _order : orderList) ?? match.players;
+
     final playerHoleScores = userStrokesIterable.map((e) {
       final isMe = FirebaseHelper.getUserId() == e.user.id;
+      final order = displayOrder.indexOf(e.user.id);
 
       return PlayerHoleScore(
+        key: ValueKey(e.user),
         match: match,
         userStrokes: e,
         holeIndex: index,
         editable: isMe || e.user.isOfflinePlayer(),
+        settingOrder: _isSettingOrder,
+        order: orderList == null ? null : order,
       );
     }).toList();
 
-    return SliverList(delegate: SliverChildListDelegate(playerHoleScores));
+    return SliverReorderableList(
+      itemCount: playerHoleScores.length,
+      itemBuilder: (context, index) {
+        return playerHoleScores[index];
+      },
+      onReorder: (int oldIndex, int newIndex) {
+        print('onReorder: $oldIndex, $newIndex');
+        setState(() {
+          if (oldIndex < newIndex) {
+            newIndex -= 1;
+          }
+          if (_order != null) {
+            final item = _order!.removeAt(oldIndex);
+            _order!.insert(newIndex, item);
+          }
+        });
+      },
+    );
   }
 
   CustomScrollView _buildCustomScrollView(
@@ -192,6 +310,14 @@ class HoleScreen extends StatelessWidget {
         _buildPlayerHoleScores(userStrokesIterable, match, index),
         SliverList(
           delegate: SliverChildListDelegate([
+            if (_getTeeOrder(index, userStrokesIterable.toList()) == null)
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  '* complete earlier holes to see order.',
+                  style: Theme.of(context).textTheme.bodyText1,
+                ),
+              ),
             SizedBox(height: 68),
           ]),
         ),
@@ -273,5 +399,42 @@ class HoleScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  List<String>? _getTeeOrder(int holeNum, List<UserStrokes> userStrokesList) {
+    // The order cannot be correctly computed if any players have incomplete
+    // scores for the previous holes.
+    for (int i = 0; i < userStrokesList.length; i++) {
+      for (int j = 0; j < holeNum; j++) {
+        if (userStrokesList[i].strokes[j] == 0) {
+          return null;
+        }
+      }
+    }
+
+    userStrokesList.sort((a, b) => _compareUserStrokes(holeNum, a, b));
+
+    return userStrokesList.map((e) => e.user.id).toList();
+  }
+
+  int _compareUserStrokes(int hole, UserStrokes a, UserStrokes b) {
+    // On the first hole, simply use the player order
+    if (hole == 0) {
+      final first = _match.players.indexOf(a.user.id);
+      final second = _match.players.indexOf(b.user.id);
+      return first.compareTo(second);
+    }
+
+    // After the first hole, compare the strokes from the previous hole
+    final aScore = a.strokes[hole - 1];
+    final bScore = b.strokes[hole - 1];
+
+    if (aScore != bScore) {
+      return aScore.compareTo(bScore);
+    }
+
+    // If two players have the same score on the previous hole, recursively
+    // check the hole before the previous one.
+    return _compareUserStrokes(hole - 1, a, b);
   }
 }
