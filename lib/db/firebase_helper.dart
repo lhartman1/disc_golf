@@ -87,6 +87,30 @@ abstract class FirebaseHelper {
     });
   }
 
+  static Future<List<User>> getOfflineUsers() async {
+    final user = await getCurrentUser();
+    if (user == null) return [];
+
+    final result = await FirebaseFirestore.instance.collection('users').doc(user.id).collection('offline_players').get();
+
+    return result.docs.map((e) => User.fromJson(e.data())).toList();
+  }
+
+  static Future<bool> addOfflineUserToMatch(User offlineUser, String matchId) {
+    getCurrentUser().then((user) {
+      if (user != null) {
+        FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.id)
+            .collection('offline_players')
+            .doc(offlineUser.id)
+            .set(offlineUser.toJson());
+      }
+    });
+
+    return addUserToMatch(offlineUser, matchId);
+  }
+
   static Future<bool> addUserToMatch(User user, String matchId) async {
     print('adding user "${user.id}" to match "$matchId"');
 
@@ -127,7 +151,7 @@ abstract class FirebaseHelper {
   static Future updateStartingOrder(Match match) async {
     // Update the course in the current match.
     final matchUpdateFuture =
-    FirebaseFirestore.instance.collection('matches').doc(match.id).update({
+        FirebaseFirestore.instance.collection('matches').doc(match.id).update({
       'players': match.players,
     });
 

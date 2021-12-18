@@ -7,17 +7,31 @@ import '../models/match.dart';
 import '../models/user_strokes.dart';
 import 'hole_screen.dart';
 
-class ScoreCardScreen extends StatelessWidget {
+class ScoreCardScreen extends StatefulWidget {
   final Match _match;
 
   const ScoreCardScreen(this._match);
+
+  @override
+  State<ScoreCardScreen> createState() => _ScoreCardScreenState();
+}
+
+class _ScoreCardScreenState extends State<ScoreCardScreen> {
+  late Match _match;
+
+  @override
+  void initState() {
+    super.initState();
+    _match = widget._match;
+  }
 
   @override
   Widget build(BuildContext context) {
     final body = StreamBuilder<Match>(
       stream: FirebaseHelper.getMatch(_match.id),
       builder: (context, snapshot) {
-        final match = snapshot.data ?? _match;
+        _match = snapshot.data ?? _match;
+
         return StreamBuilder<Iterable<UserStrokes>>(
           stream: FirebaseHelper.getUserStrokesForMatch(_match.id),
           builder: (context, snapshot) {
@@ -71,7 +85,7 @@ class ScoreCardScreen extends StatelessWidget {
                           ),
                         ],
                         rows: [
-                          ...match.course.pars.asMap().entries.map((e) {
+                          ..._match.course.pars.asMap().entries.map((e) {
                             final par = e.value;
                             return DataRow(
                               onSelectChanged: (_) {
@@ -79,7 +93,7 @@ class ScoreCardScreen extends StatelessWidget {
                                 Navigator.of(context).push(MaterialPageRoute(
                                   builder: (context) {
                                     return HoleScreen(
-                                      match,
+                                      _match,
                                       initialPage: e.key,
                                     );
                                   },
@@ -146,13 +160,13 @@ class ScoreCardScreen extends StatelessWidget {
                                       style:
                                           Theme.of(context).textTheme.bodyText1,
                                     ),
-                                    Text('(Par ${match.course.parTotal})'),
+                                    Text('(Par ${_match.course.parTotal})'),
                                   ],
                                 ),
                               ),
                               ...List.generate(userStrokesList.length, (index) {
                                 String text = userStrokesList[index]
-                                    .getScoreSummary(match);
+                                    .getScoreSummary(_match);
 
                                 if (userStrokesList[index].incompleteScore) {
                                   text += '*';
@@ -199,28 +213,25 @@ class ScoreCardScreen extends StatelessWidget {
             tooltip: 'Add an offline player',
             icon: Icon(Icons.person_add_alt),
             onPressed: () async {
-              final name = await _showOfflinePlayerDialog(context);
-              if (name == null) return;
-              final user = User(
-                  id: OFFLINE_PREFIX + name,
-                  email: null,
-                  imageUri: null,
-                  username: name);
+              final users = await _showOfflinePlayerDialog(context);
+              if (users == null) return;
 
-              final result =
-                  await FirebaseHelper.addUserToMatch(user, _match.id);
-              if (result == false) {
-                ScaffoldMessenger.of(context)
-                  ..clearSnackBars()
-                  ..showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Could not add "$name" to the match.',
+              users.forEach((user) async {
+                final result =
+                    await FirebaseHelper.addOfflineUserToMatch(user, _match.id);
+                if (result == false) {
+                  ScaffoldMessenger.of(context)
+                    ..clearSnackBars()
+                    ..showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Could not add "${user.username}" to the match.',
+                        ),
+                        backgroundColor: Theme.of(context).errorColor,
                       ),
-                      backgroundColor: Theme.of(context).errorColor,
-                    ),
-                  );
-              }
+                    );
+                }
+              });
             },
           ),
           IconButton(
@@ -247,12 +258,14 @@ class ScoreCardScreen extends StatelessWidget {
     );
   }
 
-  Future<String?> _showOfflinePlayerDialog(BuildContext context) {
-    return showDialog<String>(
+  Future<List<User>?> _showOfflinePlayerDialog(BuildContext context) {
+    return showDialog<List<User>>(
       context: context,
       builder: (context) {
         var input = '';
         String? errorText;
+        final List<User> selected = [];
+
         return StatefulBuilder(
           builder: (context, setState) {
             return SimpleDialog(
@@ -278,6 +291,56 @@ class ScoreCardScreen extends StatelessWidget {
                   child: Text(
                       'Note: If the other player has their own device, you may want to consider sharing the match via QR Code.'),
                 ),
+                FutureBuilder<List<User>>(
+                  future: FirebaseHelper.getOfflineUsers(),
+                  builder: (context, snapshot) {
+                    final users = snapshot.data;
+                    if (users != null) {
+                      // Remove offline players already in the current match
+                      final existingOfflinePlayers = _match.players.where(
+                          (element) => element.startsWith(OFFLINE_PREFIX));
+                      users.removeWhere((element) =>
+                          existingOfflinePlayers.contains(element.id));
+
+                      if (users.length > 0) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'OR select a previous user:',
+                                style: Theme.of(context).textTheme.bodyText1,
+                              ),
+                              Wrap(
+                                spacing: 12,
+                                children: users.take(6).map((user) {
+                                  return InputChip(
+                                    label: Text(user.username),
+                                    selected: selected.contains(user),
+                                    onSelected: (bool value) {
+                                      setState(() {
+                                        if (selected.contains(user)) {
+                                          selected.remove(user);
+                                        } else {
+                                          selected.add(user);
+                                        }
+                                      });
+                                    },
+                                    // TODO: delete user from firestore collection
+                                    // onDeleted: () {},
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    }
+                    return Container();
+                  },
+                ),
                 Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -292,12 +355,20 @@ class ScoreCardScreen extends StatelessWidget {
                       ),
                       TextButton(
                         onPressed: () {
-                          if (input.isEmpty) {
+                          if (input.isNotEmpty) {
+                            selected.add(User(
+                                id: OFFLINE_PREFIX + input,
+                                email: null,
+                                imageUri: null,
+                                username: input));
+                          }
+
+                          if (selected.isEmpty) {
                             setState(() {
                               errorText = 'Enter a name to add a player';
                             });
                           } else {
-                            Navigator.of(context).pop(input);
+                            Navigator.of(context).pop(selected);
                           }
                         },
                         child: Text('Save'),
