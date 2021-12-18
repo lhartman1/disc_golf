@@ -94,7 +94,8 @@ class _QRScanScreenState extends State<QRScanScreen> {
       this.controller = controller;
     });
     controller.scannedDataStream.listen((scanData) async {
-      if (result != null) return;
+      final code = scanData.code;
+      if (result != null || code == null) return;
 
       setState(() {
         result = scanData;
@@ -106,7 +107,7 @@ class _QRScanScreenState extends State<QRScanScreen> {
         return;
       }
 
-      FirebaseHelper.addUserToMatch(user, scanData.code).then((value) {
+      FirebaseHelper.addUserToMatch(user, code).then((value) {
         if (value) {
           Navigator.pop(context);
         } else {
